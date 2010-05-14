@@ -92,8 +92,11 @@ public class PluginConfig {
     public static void initConfLastModified() {
         VirtualFile conf = Play.getVirtualFile("conf/press.conf");
 
-        // Note: lastModified() will return 0 if the file doesn't exist
-        configLastModified = conf.lastModified();
+        if(conf == null || !conf.exists()) {
+            configLastModified = 0;
+        } else {
+            configLastModified = conf.lastModified();
+        }
     }
 
     /**
@@ -103,11 +106,11 @@ public class PluginConfig {
     public static boolean hasChanged() {
         VirtualFile conf = Play.getVirtualFile("conf/press.conf");
 
-        // Detect if there was a file but it has now been deleted
-        if (configLastModified != 0 && !conf.exists()) {
-            return true;
+        if(conf == null || !conf.exists()) {
+            // Detect if there was a file but it has now been deleted
+            return (configLastModified != 0);
         }
-
+        
         long lastModified = conf.lastModified();
         return (lastModified > configLastModified);
     }
@@ -142,7 +145,6 @@ public class PluginConfig {
         try {
             config = new PropertiesConfiguration("press.conf");
         } catch (ConfigurationException e) {
-            e.printStackTrace();
         }
 
         if (config == null) {
