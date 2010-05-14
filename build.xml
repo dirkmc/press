@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="press" default="build" basedir=".">
+	<property file="build.properties" />
+    
+    <path id="project.classpath">
+        <pathelement path="${play.path}/framework/classes"/>
+        <fileset dir="${play.path}/framework/lib">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${play.path}/framework">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="lib">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <target name="build" depends="compile">
+
+        <copy todir="tmp/classes">
+            <fileset dir="app">
+                <include name="**/*.properties"/>
+                <include name="**/*.xml"/>
+                <include name="**/play.plugins"/>
+                <include name="**/play.static"/>
+            </fileset>
+        </copy>
+        <jar destfile="lib/play-press.jar" basedir="tmp/classes">
+            <manifest>
+                <section name="Play-module">
+                    <attribute name="Specification-Title" value="press"/>
+                </section>
+            </manifest>
+        </jar>
+        <delete dir="tmp" />
+    </target>
+
+    <target name="compile">
+        <mkdir dir="tmp/classes" />
+        <javac srcdir="app" destdir="tmp/classes" target="1.5" debug="true">
+            <classpath refid="project.classpath" />
+        </javac>
+    </target>
+
+</project>

@@ -1,0 +1,11 @@
+# This file defines all module routes (Higher priority routes first)
+#
+# import these routes in the main app as :
+# *     /                       module:press
+#
+# ~~~~
+
+GET      /press/js/clear         press.Press.clearJSCache
+GET      /press/js/{key}         press.Press.getCompressedJS
+GET      /press/css/clear        press.Press.clearCSSCache
+GET      /press/css/{key}        press.Press.getCompressedCSS
