@@ -67,8 +67,10 @@ public class Plugin extends PlayPlugin {
     public void afterActionInvocation() {
         // At the end of the action, save the list of files that will be
         // associated with this request
-        jsCompressor.get().saveFileList();
-        cssCompressor.get().saveFileList();
+        if(jsCompressor.get() != null && cssCompressor.get() != null) {
+            jsCompressor.get().saveFileList();
+            cssCompressor.get().saveFileList();
+        }
     }
 
     /**
