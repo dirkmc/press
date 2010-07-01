@@ -8,11 +8,14 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,6 +25,7 @@ import play.exceptions.UnexpectedException;
 import play.libs.Crypto;
 import play.mvc.Router;
 import play.mvc.Http.Request;
+import play.mvc.Http.Response;
 import play.mvc.Router.ActionDefinition;
 import play.templates.JavaExtensions;
 import play.vfs.VirtualFile;
@@ -30,6 +34,9 @@ public abstract class Compressor extends PlayPlugin {
     static final String PRESS_SIGNATURE = "press-1.0";
     static final String PATTERN_TEXT = "^/\\*" + PRESS_SIGNATURE + "\\|(.*?)\\*/$";
     static final Pattern HEADER_PATTERN = Pattern.compile(PATTERN_TEXT);
+
+    // File type, eg "JavaScript"
+    String fileType;
 
     // File extension, eg ".js"
     String extension;
@@ -43,6 +50,12 @@ public abstract class Compressor extends PlayPlugin {
     // Compressed file tag name, eg "#{press.compressed-script}"
     String compressedTagName;
 
+    // Signatures for the start and end of a request to compress a file,
+    // eg "<!-- press js: " and " -->" would result in a compress request like:
+    // <!-- press js: /public/javascript/myfile.js -->
+    String pressRequestStart;
+    String pressRequestEnd;
+
     // Directory where the source files are read from, eg "/public/javascripts"
     String srcDir;
 
@@ -53,16 +66,25 @@ public abstract class Compressor extends PlayPlugin {
     String requestKey = null;
 
     // The list of files compressed as part of this request
-    List<VirtualFile> fileList = new ArrayList<VirtualFile>();
+    List<String> fileNames;
+    Set<String> fileNamesSet;
 
     protected interface FileCompressor {
         public void compress(String fileName, Reader in, Writer out) throws Exception;
     }
 
-    public Compressor(String extension, String getCompressedFileAction, String tagName,
-            String compressedTagName, String srcDir, String compressedDir) {
+    public Compressor(String fileType, String extension, String getCompressedFileAction,
+            String tagName, String compressedTagName, String pressRequestStart,
+            String pressRequestEnd, String srcDir, String compressedDir) {
+
+        this.fileNames = new ArrayList<String>();
+        this.fileNamesSet = new HashSet<String>();
+
+        this.fileType = fileType;
         this.extension = extension;
         this.getCompressedFileAction = getCompressedFileAction;
+        this.pressRequestStart = pressRequestStart;
+        this.pressRequestEnd = pressRequestEnd;
         this.tagName = tagName;
         this.compressedTagName = compressedTagName;
         this.srcDir = addTrailingSlash(srcDir);
@@ -77,17 +99,25 @@ public abstract class Compressor extends PlayPlugin {
         return dir;
     }
 
-    public void add(String fileName) {
+    /**
+     * Adds a file to the list of files to be compressed
+     * 
+     * @return the file request signature to be output in the HTML
+     */
+    public String add(String fileName) {
         PressLogger.trace("Adding %s to compression", fileName);
 
-        VirtualFile file = VirtualFile.fromRelativePath(srcDir + fileName);
-        if (!file.exists()) {
-            String msg = "Attempt to add file '" + file.getRealFile().getAbsolutePath() + "' ";
-            msg += "to compression with " + tagName + " tag but file does not exist.";
+        fileNames.add(fileName);
+        fileNamesSet.add(fileName);
+        if (fileNames.size() != fileNamesSet.size()) {
+            String msg = "Attempt to add the same " + fileType + " file ";
+            msg += "to compression twice: '" + fileName + "'\n";
+            msg += "Check that you're not including the same file in two different ";
+            msg += tagName + " tags";
             throw new PressException(msg);
         }
 
-        fileList.add(file);
+        return getFileRequestSignature(fileName);
     }
 
     public String compressedUrl() {
@@ -102,7 +132,7 @@ public abstract class Compressor extends PlayPlugin {
         params.put("key", requestKey);
         ActionDefinition route = Router.reverse(getCompressedFileAction, params);
 
-        int numFiles = fileList.size();
+        int numFiles = fileNames.size();
         PressLogger.trace("Adding key %s for compression of %d files", requestKey, numFiles);
 
         return route.url;
@@ -116,13 +146,8 @@ public abstract class Compressor extends PlayPlugin {
             // If the file list is not empty, then there have been files added
             // to compression but they will not be output. So throw an
             // exception telling the user he needs to add some files.
-            if (fileList.size() > 0) {
-                List<String> fileNames = new ArrayList<String>(fileList.size());
-                for (VirtualFile file : fileList) {
-                    fileNames.add(file.getName());
-                }
-
-                String msg = fileList.size() + " files added to compression with ";
+            if (fileNames.size() > 0) {
+                String msg = fileNames.size() + " files added to compression with ";
                 msg += tagName + " tag but no " + compressedTagName + " tag was found. ";
                 msg += "You must include a " + compressedTagName + " tag in the template ";
                 msg += "to output the compressed content of these files: ";
@@ -134,11 +159,66 @@ public abstract class Compressor extends PlayPlugin {
             return;
         }
 
+        // The press tag may not always been executed by the template engine
+        // in the same order that the resulting <script> tags would appear in
+        // the HMTL output. So here we scan the output to figure out in what
+        // order the <script> tags should actually be output.
+        long timeStart = System.currentTimeMillis();
+        List<String> orderedFileNames = getFileListOrder();
+        long timeAfter = System.currentTimeMillis();
+        PressLogger.trace("Time to scan response for %s files for '%s': %d milli-seconds",
+                fileType, Request.current().url, (timeAfter - timeStart));
+
+        // Add the list of files to the cache.
+        // When the server receives a request for the compressed file, it will
+        // retrieve the list of files and compress them.
+        addFileListToCache(requestKey, orderedFileNames);
+    }
+
+    public List<String> getFileListOrder() {
+        String content = getResponseContent();
+        List<String> filesInOrder = getFilesInResponse(content);
+
+        // Do some sanity checking
+        for (String fileInOrder : filesInOrder) {
+            if (!fileNamesSet.contains(fileInOrder)) {
+                String msg = "File compress request for '" + fileInOrder + "' ";
+                msg += "found in response but file was never added to file list. ";
+                msg += "Please disable the press plugin and report a bug.";
+                throw new PressException(msg);
+            }
+        }
+
+        if (filesInOrder.size() != fileNamesSet.size()) {
+            String msg = "Number of file compress requests found in response ";
+            msg += "(" + filesInOrder.size() + ")";
+            msg += "not equal to number of files added to compression ";
+            msg += "(" + fileNamesSet.size() + "). ";
+            msg += "Please disable the press plugin and report a bug.";
+            throw new PressException(msg);
+        }
+
+        return filesInOrder;
+    }
+
+    public void addFileListToCache(String cacheKey, List<String> fileNamesList) {
+        List<VirtualFile> fileList = new ArrayList<VirtualFile>();
+        for (String fileName : fileNamesList) {
+            VirtualFile file = VirtualFile.fromRelativePath(srcDir + fileName);
+
+            // Check the file exists
+            if (!file.exists()) {
+                String msg = "Attempt to add file '" + file.getRealFile().getAbsolutePath() + "' ";
+                msg += "to compression with " + tagName + " tag but file does not exist.";
+                throw new PressException(msg);
+            }
+
+            fileList.add(file);
+        }
+
         // Add a mapping between the request key and the list of files that
         // are compressed for the request
-        List<VirtualFile> jsFilesCopy = new ArrayList<VirtualFile>(fileList.size());
-        jsFilesCopy.addAll(fileList);
-        Cache.set(requestKey, jsFilesCopy, PluginConfig.compressionKeyStorageTime);
+        Cache.set(cacheKey, fileList, PluginConfig.compressionKeyStorageTime);
     }
 
     /**
@@ -308,7 +388,7 @@ public abstract class Compressor extends PlayPlugin {
                     return true;
                 }
             }
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             // If there's any sort of problem reading the header, we can just
             // overwrite the file
             return true;
@@ -323,22 +403,24 @@ public abstract class Compressor extends PlayPlugin {
      * - An opening comment
      * - A signature
      * - A '|' character used as a separator
-     * - A list of unix timestamps separated by ':'
+     * - A list of unix timestamps separated by the ':' character
      * - A closing comment
      * 
      * eg
-     * press-1.0|12323123:1231212:1312312:1312312
+     * press-1.0|12323123:1231212:1312312
      * </pre>
      * 
      */
     public static String createFileHeader(List<VirtualFile> componentFiles) {
-        List<String> asStrings = new ArrayList<String>(componentFiles.size());
+        List<String> timestamps = new ArrayList<String>(componentFiles.size());
 
         for (int i = 0; i < componentFiles.size(); i++) {
-            asStrings.add(componentFiles.get(i).lastModified().toString());
+            VirtualFile file = componentFiles.get(i);
+            String lastMod = file.lastModified().toString();
+            timestamps.add(lastMod);
         }
 
-        return "/*" + PRESS_SIGNATURE + "|" + JavaExtensions.join(asStrings, ":") + "*/\n";
+        return "/*" + PRESS_SIGNATURE + "|" + JavaExtensions.join(timestamps, ":") + "*/\n";
     }
 
     public static String extractHeaderContent(File file) {
@@ -378,4 +460,43 @@ public abstract class Compressor extends PlayPlugin {
         return new String(chars);
     }
 
+    /**
+     * Get the content of the response sent to the client as a String
+     */
+    protected static String getResponseContent() {
+        try {
+            String content = (String) Request.current().args.get("responseString");
+            if (content == null) {
+                content = Response.current.get().out.toString("utf-8");
+                Request.current().args.put("responseString", content);
+            }
+            return content;
+        } catch (UnsupportedEncodingException e) {
+            throw new UnexpectedException(e);
+        }
+    }
+
+    protected String getFileRequestSignature(String fileName) {
+        return pressRequestStart + fileName + pressRequestEnd;
+    }
+
+    protected List<String> getFilesInResponse(String content) {
+        List<String> filesInOrder = new ArrayList<String>();
+
+        int startIndex = content.indexOf(pressRequestStart);
+        while (startIndex != -1) {
+            int endIndex = content.indexOf(pressRequestEnd, startIndex);
+            if (endIndex == -1) {
+                return filesInOrder;
+            }
+
+            int fileNameStartIndex = startIndex + pressRequestStart.length();
+            String foundFileName = content.substring(fileNameStartIndex, endIndex);
+            filesInOrder.add(foundFileName);
+
+            startIndex = content.indexOf(pressRequestStart, endIndex);
+        }
+
+        return filesInOrder;
+    }
 }

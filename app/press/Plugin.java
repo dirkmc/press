@@ -7,7 +7,7 @@ import play.PlayPlugin;
 public class Plugin extends PlayPlugin {
     static ThreadLocal<JSCompressor> jsCompressor = new ThreadLocal<JSCompressor>();
     static ThreadLocal<CSSCompressor> cssCompressor = new ThreadLocal<CSSCompressor>();
-    
+
     /**
      * Called by play to ask the plugin if anything has changed. We check to see
      * if the configuration file has changed, and if so we throw an exception,
@@ -35,14 +35,14 @@ public class Plugin extends PlayPlugin {
         cssCompressor.set(new CSSCompressor());
     }
 
-    public static void addJS(String fileName) {
+    public static String addJS(String fileName) {
         // Add files to the JS compressor
-        jsCompressor.get().add(fileName);
+        return jsCompressor.get().add(fileName);
     }
 
-    public static void addCSS(String fileName) {
+    public static String addCSS(String fileName) {
         // Add files to the CSS compressor
-        cssCompressor.get().add(fileName);
+        return cssCompressor.get().add(fileName);
     }
 
     /**
@@ -67,7 +67,7 @@ public class Plugin extends PlayPlugin {
     public void afterActionInvocation() {
         // At the end of the action, save the list of files that will be
         // associated with this request
-        if(jsCompressor.get() != null && cssCompressor.get() != null) {
+        if (jsCompressor.get() != null && cssCompressor.get() != null) {
             jsCompressor.get().saveFileList();
             cssCompressor.get().saveFileList();
         }

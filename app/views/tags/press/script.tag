@@ -23,7 +23,7 @@
     }
 }%
 #{if press.Plugin.enabled() }
-  %{ press.Plugin.addJS(_src) }%
+  ${ press.Plugin.addJS(_src) }
 #{/if}
 #{else}
   <script src="/public/javascripts/${_src}" type="text/javascript" language="javascript" charset="utf-8"></script>

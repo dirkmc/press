@@ -14,7 +14,7 @@ public class PluginConfig {
      */
     public static class DefaultConfig {
         // Whether the plugin is enabled
-        public static final boolean enabled = true;
+        public static final boolean enabled = false;
 
         // The caching strategy
         public static final CachingStrategy cache = (Play.mode == Mode.DEV) ? CachingStrategy.Change

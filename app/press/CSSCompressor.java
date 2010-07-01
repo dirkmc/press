@@ -15,9 +15,9 @@ public class CSSCompressor extends Compressor {
     private static final String EXTENSION = ".css";
 
     public CSSCompressor() {
-        super(EXTENSION, "press.Press.getCompressedCSS", "#{press.stylesheet}",
-                "#{press.compressed-stylesheet}", PluginConfig.css.srcDir,
-                PluginConfig.css.compressedDir);
+        super("CSS", EXTENSION, "press.Press.getCompressedCSS", "#{press.stylesheet}",
+                "#{press.compressed-stylesheet}", "<!-- press-css: ", " -->",
+                PluginConfig.css.srcDir, PluginConfig.css.compressedDir);
     }
 
     public static VirtualFile getCompressedFile(String key) {

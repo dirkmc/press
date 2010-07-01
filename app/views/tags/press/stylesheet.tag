@@ -27,7 +27,7 @@
     }
 }%
 #{if press.Plugin.enabled() }
-  %{ press.Plugin.addCSS(_src) }%
+  ${ press.Plugin.addCSS(_src) }
 #{/if}
 #{else}
   <link href="/public/stylesheets/${_src}" rel="stylesheet" type="text/css" charset="utf-8" #{if _media} media="${_media}"#{/if}></link>

@@ -19,8 +19,9 @@ public class JSCompressor extends Compressor {
     private static final String EXTENSION = ".js";
 
     public JSCompressor() {
-        super(EXTENSION, "press.Press.getCompressedJS", "#{press.script}",
-                "#{press.compressed-script}", js.srcDir, js.compressedDir);
+        super("JavaScript", EXTENSION, "press.Press.getCompressedJS", "#{press.script}",
+                "#{press.compressed-script}", "<!-- press-js: ", " -->", js.srcDir,
+                js.compressedDir);
     }
 
     public static VirtualFile getCompressedFile(String key) {
