@@ -7,10 +7,13 @@ import java.io.FileFilter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +26,7 @@ import play.PlayPlugin;
 import play.cache.Cache;
 import play.exceptions.UnexpectedException;
 import play.libs.Crypto;
+import play.libs.IO;
 import play.mvc.Router;
 import play.mvc.Http.Request;
 import play.mvc.Http.Response;
@@ -66,8 +70,7 @@ public abstract class Compressor extends PlayPlugin {
     String requestKey = null;
 
     // The list of files compressed as part of this request
-    List<String> fileNames;
-    Set<String> fileNamesSet;
+    Map<String, FileInfo> fileInfos;
 
     protected interface FileCompressor {
         public void compress(String fileName, Reader in, Writer out) throws Exception;
@@ -77,8 +80,7 @@ public abstract class Compressor extends PlayPlugin {
             String tagName, String compressedTagName, String pressRequestStart,
             String pressRequestEnd, String srcDir, String compressedDir) {
 
-        this.fileNames = new ArrayList<String>();
-        this.fileNamesSet = new HashSet<String>();
+        this.fileInfos = new HashMap<String, FileInfo>();
 
         this.fileType = fileType;
         this.extension = extension;
@@ -104,19 +106,23 @@ public abstract class Compressor extends PlayPlugin {
      * 
      * @return the file request signature to be output in the HTML
      */
-    public String add(String fileName) {
-        PressLogger.trace("Adding %s to compression", fileName);
-
-        fileNames.add(fileName);
-        fileNamesSet.add(fileName);
-        if (fileNames.size() != fileNamesSet.size()) {
+    public String add(String fileName, boolean compress) {
+        if(compress) {
+            PressLogger.trace("Adding %s to output", fileName);
+        } else {
+            PressLogger.trace("Adding %s to output (will not be compressed)", fileName);
+        }
+        
+        if(fileInfos.containsKey(fileName)) {
             String msg = "Attempt to add the same " + fileType + " file ";
             msg += "to compression twice: '" + fileName + "'\n";
             msg += "Check that you're not including the same file in two different ";
             msg += tagName + " tags";
             throw new PressException(msg);
         }
-
+        
+        fileInfos.put(fileName, new FileInfo(fileName, compress, null));
+        
         return getFileRequestSignature(fileName);
     }
 
@@ -132,7 +138,7 @@ public abstract class Compressor extends PlayPlugin {
         params.put("key", requestKey);
         ActionDefinition route = Router.reverse(getCompressedFileAction, params);
 
-        int numFiles = fileNames.size();
+        int numFiles = fileInfos.size();
         PressLogger.trace("Adding key %s for compression of %d files", requestKey, numFiles);
 
         return route.url;
@@ -146,12 +152,12 @@ public abstract class Compressor extends PlayPlugin {
             // If the file list is not empty, then there have been files added
             // to compression but they will not be output. So throw an
             // exception telling the user he needs to add some files.
-            if (fileNames.size() > 0) {
-                String msg = fileNames.size() + " files added to compression with ";
+            if (fileInfos.size() > 0) {
+                String msg = fileInfos.size() + " files added to compression with ";
                 msg += tagName + " tag but no " + compressedTagName + " tag was found. ";
                 msg += "You must include a " + compressedTagName + " tag in the template ";
                 msg += "to output the compressed content of these files: ";
-                msg += JavaExtensions.join(fileNames, ", ");
+                msg += JavaExtensions.join(fileInfos.keySet(), ", ");
 
                 throw new PressException(msg);
             }
@@ -164,7 +170,7 @@ public abstract class Compressor extends PlayPlugin {
         // the HMTL output. So here we scan the output to figure out in what
         // order the <script> tags should actually be output.
         long timeStart = System.currentTimeMillis();
-        List<String> orderedFileNames = getFileListOrder();
+        List<FileInfo> orderedFileNames = getFileListOrder();
         long timeAfter = System.currentTimeMillis();
         PressLogger.trace("Time to scan response for %s files for '%s': %d milli-seconds",
                 fileType, Request.current().url, (timeAfter - timeStart));
@@ -175,36 +181,40 @@ public abstract class Compressor extends PlayPlugin {
         addFileListToCache(requestKey, orderedFileNames);
     }
 
-    public List<String> getFileListOrder() {
+    public List<FileInfo> getFileListOrder() {
         String content = getResponseContent();
-        List<String> filesInOrder = getFilesInResponse(content);
-
+        List<String> namesInOrder = getFilesInResponse(content);
+        List<FileInfo> filesInOrder = new ArrayList<FileInfo>(namesInOrder.size());
+        
         // Do some sanity checking
-        for (String fileInOrder : filesInOrder) {
-            if (!fileNamesSet.contains(fileInOrder)) {
-                String msg = "File compress request for '" + fileInOrder + "' ";
+        if (namesInOrder.size() != fileInfos.size()) {
+            String msg = "Number of file compress requests found in response ";
+            msg += "(" + namesInOrder.size() + ")";
+            msg += "not equal to number of files added to compression ";
+            msg += "(" + fileInfos.size() + "). ";
+            msg += "Please disable the press plugin and report a bug.";
+            throw new PressException(msg);
+        }
+
+        // Copy the FileInfo from the map into an array, in order
+        for (String fileName : namesInOrder) {
+            if (!fileInfos.containsKey(fileName)) {
+                String msg = "File compress request for '" + fileName + "' ";
                 msg += "found in response but file was never added to file list. ";
                 msg += "Please disable the press plugin and report a bug.";
                 throw new PressException(msg);
             }
-        }
-
-        if (filesInOrder.size() != fileNamesSet.size()) {
-            String msg = "Number of file compress requests found in response ";
-            msg += "(" + filesInOrder.size() + ")";
-            msg += "not equal to number of files added to compression ";
-            msg += "(" + fileNamesSet.size() + "). ";
-            msg += "Please disable the press plugin and report a bug.";
-            throw new PressException(msg);
+            
+            filesInOrder.add(fileInfos.get(fileName));
         }
 
         return filesInOrder;
     }
 
-    public void addFileListToCache(String cacheKey, List<String> fileNamesList) {
-        List<VirtualFile> fileList = new ArrayList<VirtualFile>();
-        for (String fileName : fileNamesList) {
-            VirtualFile file = VirtualFile.fromRelativePath(srcDir + fileName);
+    public void addFileListToCache(String cacheKey, List<FileInfo> originalList) {
+        List<FileInfo> newList = new ArrayList<FileInfo>();
+        for (FileInfo fileInfo : originalList) {
+            VirtualFile file = VirtualFile.fromRelativePath(srcDir + fileInfo.fileName);
 
             // Check the file exists
             if (!file.exists()) {
@@ -213,12 +223,12 @@ public abstract class Compressor extends PlayPlugin {
                 throw new PressException(msg);
             }
 
-            fileList.add(file);
+            newList.add(new FileInfo(fileInfo.fileName, fileInfo.compress, file));
         }
 
         // Add a mapping between the request key and the list of files that
         // are compressed for the request
-        Cache.set(cacheKey, fileList, PluginConfig.compressionKeyStorageTime);
+        Cache.set(cacheKey, newList, PluginConfig.compressionKeyStorageTime);
     }
 
     /**
@@ -237,7 +247,7 @@ public abstract class Compressor extends PlayPlugin {
     @SuppressWarnings("unchecked")
     protected static VirtualFile getCompressedFile(FileCompressor compressor, String key,
             String compressedDir, String extension) {
-        List<VirtualFile> componentFiles = (List<VirtualFile>) Cache.get(key);
+        List<FileInfo> componentFiles = (List<FileInfo>) Cache.get(key);
 
         // If there was nothing found for the given request key, return null.
         // This shouldn't happen unless there was a very long delay between the
@@ -250,8 +260,9 @@ public abstract class Compressor extends PlayPlugin {
     }
 
     protected static VirtualFile getCompressedFile(FileCompressor compressor,
-            List<VirtualFile> componentFiles, String compressedDir, String extension) {
-        String fileName = Crypto.passwordHash(JavaExtensions.join(componentFiles, ""));
+            List<FileInfo> componentFiles, String compressedDir, String extension) {
+        String joinedFileNames = JavaExtensions.join(FileInfo.getFileNames(componentFiles), "");
+        String fileName = Crypto.passwordHash(joinedFileNames);
         fileName = lettersOnly(fileName);
         String filePath = compressedDir + fileName + extension;
         VirtualFile file = VirtualFile.fromRelativePath(filePath);
@@ -290,9 +301,14 @@ public abstract class Compressor extends PlayPlugin {
             String lastModifiedDates = createFileHeader(componentFiles);
             out.append(lastModifiedDates);
 
-            for (VirtualFile componentFile : componentFiles) {
+            long timeStart = System.currentTimeMillis();
+            for (FileInfo componentFile : componentFiles) {
                 compress(compressor, componentFile, out);
             }
+            long timeAfter = System.currentTimeMillis();
+            PressLogger.trace("Time to compress files for '%s': %d milli-seconds",
+                    file.getRealFile().getName(), (timeAfter - timeStart));
+
 
             // Once the compressed output has been written to the temporary
             // file, move it to the cache directory.
@@ -338,7 +354,7 @@ public abstract class Compressor extends PlayPlugin {
         return deleted;
     }
 
-    private static boolean useCache(List<VirtualFile> componentFiles, VirtualFile file,
+    private static boolean useCache(List<FileInfo> componentFiles, VirtualFile file,
             String extension) {
         PressLogger.trace("Caching strategy is %s", PluginConfig.cache);
         if (PluginConfig.cache.equals(CachingStrategy.Never)) {
@@ -359,7 +375,7 @@ public abstract class Compressor extends PlayPlugin {
         return !changed;
     }
 
-    private static boolean haveComponentFilesChanged(List<VirtualFile> componentFiles,
+    private static boolean haveComponentFilesChanged(List<FileInfo> componentFiles,
             VirtualFile file) {
 
         // Check if the file exists
@@ -383,8 +399,19 @@ public abstract class Compressor extends PlayPlugin {
             // Check each of the stored last modified dates against the file's
             // current last modified date
             for (int i = 0; i < componentFiles.size(); i++) {
-                long lastModified = Long.parseLong(lastModifieds[i]);
-                if (componentFiles.get(i).lastModified() != lastModified) {
+                FileInfo fileInfo = componentFiles.get(i);
+                
+                // Check if the file was compressed and is now uncompressed,
+                // or vice versa
+                char compress = fileInfo.compress ? 'c' : 'u';
+                if(lastModifieds[i].charAt(0) != compress) {
+                    return true;
+                }
+                
+                // Check the timestamp
+                String lastMod = lastModifieds[i].substring(1);
+                long lastModified = Long.parseLong(lastMod);
+                if (fileInfo.file.lastModified() != lastModified) {
                     return true;
                 }
             }
@@ -403,21 +430,24 @@ public abstract class Compressor extends PlayPlugin {
      * - An opening comment
      * - A signature
      * - A '|' character used as a separator
-     * - A list of unix timestamps separated by the ':' character
+     * - A ':' separated list of
+     *   o the character 'c' or 'u', indicating whether the file is compressed
+     *   o a unix timestamp
      * - A closing comment
      * 
      * eg
-     * press-1.0|12323123:1231212:1312312
+     * press-1.0|c12323123:u1231212:c1312312:c1312423
      * </pre>
      * 
      */
-    public static String createFileHeader(List<VirtualFile> componentFiles) {
+    public static String createFileHeader(List<FileInfo> componentFiles) {
         List<String> timestamps = new ArrayList<String>(componentFiles.size());
 
         for (int i = 0; i < componentFiles.size(); i++) {
-            VirtualFile file = componentFiles.get(i);
-            String lastMod = file.lastModified().toString();
-            timestamps.add(lastMod);
+            FileInfo fileInfo = componentFiles.get(i);
+            String lastMod = fileInfo.file.lastModified().toString();
+            char compress = fileInfo.compress ? 'c' : 'u';
+            timestamps.add(compress + lastMod);
         }
 
         return "/*" + PRESS_SIGNATURE + "|" + JavaExtensions.join(timestamps, ":") + "*/\n";
@@ -438,14 +468,33 @@ public abstract class Compressor extends PlayPlugin {
         }
     }
 
-    private static void compress(FileCompressor compressor, VirtualFile file, Writer out)
+    private static void compress(FileCompressor compressor, FileInfo fileInfo, Writer out)
             throws Exception {
-        String fileName = file.getName();
-        PressLogger.trace("Compressing %s", fileName);
-        BufferedReader in = new BufferedReader(new FileReader(file.getRealFile()));
-        compressor.compress(fileName, in, out);
+        String fileName = fileInfo.file.getName();
+        BufferedReader in = new BufferedReader(new FileReader(fileInfo.file.getRealFile()));
+        
+        // If the file should be compressed
+        if(fileInfo.compress) {
+            // Invoke the compressor
+            PressLogger.trace("Compressing %s", fileName);
+            compressor.compress(fileName, in, out);
+        } else {
+            // Otherwise just copy it
+            PressLogger.trace("Adding already compressed file %s", fileName);
+            write(in, out);
+            compressor.compress(fileName, in, out);
+        }
     }
 
+    public static void write(Reader reader, Writer writer) throws IOException {
+        int read = 0;
+        char[] buffer = new char[8096];
+        while ((read = reader.read(buffer)) > 0) {
+            writer.write(buffer, 0, read);
+        }
+    }
+    
+    
     /**
      * Converts any non-letter characters in the given string to letters
      */
@@ -498,5 +547,26 @@ public abstract class Compressor extends PlayPlugin {
         }
 
         return filesInOrder;
+    }
+    
+    protected static class FileInfo {
+        String fileName;
+        boolean compress;
+        private VirtualFile file;
+        
+        public FileInfo(String fileName, boolean compress, VirtualFile file) {
+            this.fileName = fileName;
+            this.compress = compress;
+            this.file = file;
+        }
+
+        public static Collection<String> getFileNames(List<FileInfo> list) {
+            Collection<String> fileNames = new ArrayList<String>(list.size());
+            for(FileInfo fileInfo : list) {
+                fileNames.add(fileInfo.fileName);
+            }
+            
+            return fileNames;
+        }
     }
 }

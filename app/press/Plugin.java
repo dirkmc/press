@@ -35,14 +35,14 @@ public class Plugin extends PlayPlugin {
         cssCompressor.set(new CSSCompressor());
     }
 
-    public static String addJS(String fileName) {
+    public static String addJS(String fileName, boolean compress) {
         // Add files to the JS compressor
-        return jsCompressor.get().add(fileName);
+        return jsCompressor.get().add(fileName, compress);
     }
 
-    public static String addCSS(String fileName) {
+    public static String addCSS(String fileName, boolean compress) {
         // Add files to the CSS compressor
-        return cssCompressor.get().add(fileName);
+        return cssCompressor.get().add(fileName, compress);
     }
 
     /**
