@@ -92,7 +92,7 @@ public class PluginConfig {
     public static void initConfLastModified() {
         VirtualFile conf = Play.getVirtualFile("conf/press.conf");
 
-        if(conf == null || !conf.exists()) {
+        if (conf == null || !conf.exists()) {
             configLastModified = 0;
         } else {
             configLastModified = conf.lastModified();
@@ -106,11 +106,11 @@ public class PluginConfig {
     public static boolean hasChanged() {
         VirtualFile conf = Play.getVirtualFile("conf/press.conf");
 
-        if(conf == null || !conf.exists()) {
+        if (conf == null || !conf.exists()) {
             // Detect if there was a file but it has now been deleted
             return (configLastModified != 0);
         }
-        
+
         long lastModified = conf.lastModified();
         return (lastModified > configLastModified);
     }
@@ -177,6 +177,13 @@ public class PluginConfig {
                     DefaultConfig.js.preserveStringLiterals);
         }
 
+        // Add a trailing slash to directories, if necessary
+        css.srcDir = addTrailingSlash(css.srcDir);
+        css.compressedDir = addTrailingSlash(css.compressedDir);
+        js.srcDir = addTrailingSlash(js.srcDir);
+        js.compressedDir = addTrailingSlash(js.compressedDir);
+
+        // Log the newly loaded configuration
         logConfig();
 
         // Reinitialize the last modified time each time readConfig is called
@@ -199,5 +206,13 @@ public class PluginConfig {
         PressLogger.trace("YUI js warn: %s", js.warn);
         PressLogger.trace("YUI js preserve all semi colons: %s", js.preserveAllSemiColons);
         PressLogger.trace("YUI js preserve string literals: %s", js.preserveStringLiterals);
+    }
+
+    public static String addTrailingSlash(String dir) {
+        if (dir.charAt(dir.length() - 1) != '/') {
+            return dir + '/';
+        }
+
+        return dir;
     }
 }

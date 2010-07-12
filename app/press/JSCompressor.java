@@ -11,7 +11,6 @@ import org.mozilla.javascript.EvaluatorException;
 
 import play.Logger;
 import play.vfs.VirtualFile;
-import press.PluginConfig.js;
 
 import com.yahoo.platform.yui.compressor.JavaScriptCompressor;
 
@@ -20,16 +19,16 @@ public class JSCompressor extends Compressor {
 
     public JSCompressor() {
         super("JavaScript", EXTENSION, "press.Press.getCompressedJS", "#{press.script}",
-                "#{press.compressed-script}", "<!-- press-js: ", " -->", js.srcDir,
-                js.compressedDir);
+                "#{press.compressed-script}", "<!-- press-js: ", " -->", PluginConfig.js.srcDir,
+                PluginConfig.js.compressedDir);
     }
 
     public static VirtualFile getCompressedFile(String key) {
-        return getCompressedFile(jsFileCompressor, key, js.compressedDir, EXTENSION);
+        return getCompressedFile(jsFileCompressor, key, PluginConfig.js.compressedDir, EXTENSION);
     }
 
     public static List<File> clearCache() {
-        return clearCache(js.compressedDir, EXTENSION);
+        return clearCache(PluginConfig.js.compressedDir, EXTENSION);
     }
 
     static FileCompressor jsFileCompressor = new FileCompressor() {
