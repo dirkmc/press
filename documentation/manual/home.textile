@@ -192,3 +192,10 @@ When the page is ready to be sent to the browser, press scans the output for com
 When the browser makes a request for @/press/js/sNJSWMCDDFAekXYWryWgigJJ.js@, press extracts the key from the file path and uses it to retrieve the list of files. If there is already a compressed file containing those files in that order in the cache, press returns that file to the browser. Otherwise it generates the compressed file on the fly and saves it to the cache.
 
 The process is the same for CSS files.
+
+
+h2. Questions
+
+If anything in the documentation is not clear, if you find a bug, or if you have questions, please use the play google group and include the word "press" in the subject line:
+http://groups.google.com/group/play-framework
+
