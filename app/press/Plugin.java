@@ -8,20 +8,6 @@ public class Plugin extends PlayPlugin {
     static ThreadLocal<JSCompressor> jsCompressor = new ThreadLocal<JSCompressor>();
     static ThreadLocal<CSSCompressor> cssCompressor = new ThreadLocal<CSSCompressor>();
 
-    /**
-     * Called by play to ask the plugin if anything has changed. We check to see
-     * if the configuration file has changed, and if so we throw an exception,
-     * which tells play to restart. Play will then call onApplicationStart().
-     */
-    @Override
-    public void detectChange() {
-        // If the configuration has changed, we throw an exception, which tells
-        // play to restart
-        if (PluginConfig.hasChanged()) {
-            throw new RuntimeException();
-        }
-    }
-
     @Override
     public void onApplicationStart() {
         // Read the config each time the application is restarted
