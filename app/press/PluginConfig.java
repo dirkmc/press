@@ -9,7 +9,7 @@ public class PluginConfig {
      */
     public static class DefaultConfig {
         // Whether the plugin is enabled
-        public static final boolean enabled = false;
+        public static final boolean enabled = (Play.mode == Mode.PROD);
 
         // The caching strategy
         public static final CachingStrategy cache = (Play.mode == Mode.DEV) ? CachingStrategy.Change
