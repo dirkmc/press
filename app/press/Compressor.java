@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import play.Play;
 import play.PlayPlugin;
 import play.cache.Cache;
 import play.exceptions.UnexpectedException;
@@ -201,7 +202,7 @@ public abstract class Compressor extends PlayPlugin {
     public void addFileListToCache(String cacheKey, List<FileInfo> originalList) {
         List<FileInfo> newList = new ArrayList<FileInfo>();
         for (FileInfo fileInfo : originalList) {
-            VirtualFile file = VirtualFile.fromRelativePath(srcDir + fileInfo.fileName);
+            VirtualFile file = getVirtualFile(srcDir + fileInfo.fileName);
 
             // Check the file exists
             if (!file.exists()) {
@@ -252,7 +253,7 @@ public abstract class Compressor extends PlayPlugin {
         String fileName = Crypto.passwordHash(joinedFileNames);
         fileName = lettersOnly(fileName);
         String filePath = compressedDir + fileName + extension;
-        VirtualFile file = VirtualFile.fromRelativePath(filePath);
+        VirtualFile file = getVirtualFile(filePath);
 
         // If the file already exists in the cache, return it
         if (useCache(componentFiles, file, extension)) {
@@ -269,7 +270,7 @@ public abstract class Compressor extends PlayPlugin {
                 componentFiles.size());
 
         // Create the directory if it doesn't already exist
-        VirtualFile dir = VirtualFile.fromRelativePath(compressedDir);
+        VirtualFile dir = getVirtualFile(compressedDir);
         if (!dir.exists()) {
             if (!dir.getRealFile().mkdirs()) {
                 throw new PressException("Could not create directory for compressed file output "
@@ -323,7 +324,7 @@ public abstract class Compressor extends PlayPlugin {
         PressLogger.trace("Deleting cached files");
 
         // Get the cache directory
-        VirtualFile dir = VirtualFile.fromRelativePath(compressedDir);
+        VirtualFile dir = getVirtualFile(compressedDir);
         if (!dir.exists() || !dir.isDirectory()) {
             return new ArrayList<File>();
         }
@@ -533,6 +534,14 @@ public abstract class Compressor extends PlayPlugin {
         }
 
         return filesInOrder;
+    }
+
+    /**
+     * Gets the file at the given path, relative to the application root, even
+     * if the file doesn't exist
+     */
+    private static VirtualFile getVirtualFile(String filePath) {
+        return VirtualFile.open(Play.getFile(filePath));
     }
 
     protected static class FileInfo {
