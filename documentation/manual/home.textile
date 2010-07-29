@@ -8,13 +8,21 @@ h2. <a>Using press</a>
 
 h3. Load the __press__ module
 
-You can load the __press__ module by including the following line in your application’s **conf/application.conf** file:
+Run the following command to install the __press__ module in your copy of Play, and note the version of the module that is installed.
 
-bc. module.press=${play.path}/modules/press
+bc. play install press
 
-By default, __press__ does not minimize JavaScript and CSS files when Play is in dev mode. In order to see the compressed output in dev, add the following line to **conf/application.conf**:
+Include the following line in your application’s **conf/application.conf** file to load the __press__ module. Be sure to use the appropriate version number:
+
+bc. module.press=${play.path}/modules/press-1.0
+
+By default, __press__ does not minimize JavaScript and CSS files when Play is in dev mode. Add the following line to **conf/application.conf** in order to see the compressed output in dev:
 
 bc. press.enabled=true
+
+Add the following line to **conf/routes** to import the __press__ routes. This simply makes the urls used by the __press__ module more uniform:
+
+bc. *  /  module:press
 
 
 h3. Replace **==&lt;script>==** with **#{press.script}**
@@ -69,12 +77,14 @@ bc. <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js
 
 All JavaScript files are compressed into a single JS file and all CSS files are compressed into a single CSS file.  __press__ outputs HTML comments indicating the order in which each JavaScript/CSS file was added to compression
 
+
 h2. <a>Tips</a>
 
 * The source CSS and JS files **MUST** be UTF-8 encoded
 * The source files will be output in compressed format in the same order as they appear in HTML when compression is disabled.
 * It doesn't matter where the **#{press.compressed-script}** and **#{press.compressed-stylesheet}** tags are declared. Even if there are **#{press.script}** or **#{press.stylesheet}** tags after them in the template, they will still be included in compression. 
 * In dev mode, changes to the JS and CSS files are detected real time. Simply save and refresh the page. See "Caching":#caching for options related to caching and the defaults for each mode.
+
 
 h2. <a name="caching">Caching</a>
 
@@ -138,22 +148,22 @@ When the **#{press.compressed-script}** or **#{press.compressed-stylesheet}** ta
 **press.key.lifetime=2mn**
 
 
-h3. press.js.sourceDir
+h3. __press.js.sourceDir__
 
 The source directory for javascript files, relative to the application root
 **press.js.sourceDir=/public/javascripts/**
 
-h3. press.css.sourceDir
+h3. __press.css.sourceDir__
 
 The source directory for css files, relative to the application root
 **press.css.sourceDir=/public/stylesheets/**
 
-h3. press.js.outputDir
+h3. __press.js.outputDir__
 
 The output directory where compressed javascript files will be written to, relative to the application root. Note: This directory will be created if it doesn't exist.
 **press.js.outputDir=/public/javascripts/press/**
 
-h3. press.css.outputDir
+h3. __press.css.outputDir__
 
 The output directory where compressed css files will be written to, relative to the application root. Note: This directory will be created if it doesn't exist.
 **press.css.outputDir=/public/stylesheets/press/**
