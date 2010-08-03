@@ -13,11 +13,9 @@ public class Plugin extends PlayPlugin {
         // Read the config each time the application is restarted
         PluginConfig.readConfig();
         
-        // If the caching strategy is "always", clear the cache
-        if(PluginConfig.cache.equals(CachingStrategy.Always)) {
-            JSCompressor.clearCache();
-            CSSCompressor.clearCache();
-        }
+        // Clear the cache
+        JSCompressor.clearCache();
+        CSSCompressor.clearCache();
     }
 
     @Override
