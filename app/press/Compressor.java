@@ -282,7 +282,7 @@ public abstract class Compressor extends PlayPlugin {
         try {
             // Compress the component files and write the output to a temporary
             // file
-            File tmp = File.createTempFile(fileName, extension);
+            File tmp = createTempFile(file);
             out = new BufferedWriter(new FileWriter(tmp));
 
             // Add the last modified dates of each component file to the start
@@ -308,7 +308,7 @@ public abstract class Compressor extends PlayPlugin {
             PressLogger.trace(msg, tmpPath, finalPath);
             if (!tmp.renameTo(file.getRealFile())) {
                 String ex = "Successfully wrote compressed file to temporary path\n" + tmpPath;
-                ex += "But could not move it to final path\n" + finalPath;
+                ex += "\nBut could not move it to final path\n" + finalPath;
                 throw new PressException(ex);
             }
 
@@ -552,6 +552,20 @@ public abstract class Compressor extends PlayPlugin {
      */
     private static VirtualFile getVirtualFile(String filePath) {
         return VirtualFile.open(Play.getFile(filePath));
+    }
+
+    /**
+     * Creates a temporary version of a file that will later be copied over the
+     * original
+     */
+    private static File createTempFile(VirtualFile original) {
+        String origPath = original.getRealFile().getAbsolutePath();
+        File tmpFile = new File(origPath + ".tmp");
+        for (int i = 1; tmpFile.exists(); i++) {
+            tmpFile = new File(origPath + ".tmp");
+        }
+
+        return tmpFile;
     }
 
     protected static class FileInfo {
