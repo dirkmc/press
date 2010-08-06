@@ -25,6 +25,10 @@ public class PluginConfig {
         // less than a second)
         public static final String compressionKeyStorageTime = "2mn";
 
+        // The maximum amount of time in milli-seconds allowed for compression
+        // to occur before a timeout exception is thrown.
+        public static final int maxCompressionTimeMillis = 60000;
+
         public static class js {
             // The directory where source javascript files are read from
             public static final String srcDir = "/public/javascripts/";
@@ -56,6 +60,7 @@ public class PluginConfig {
     public static CachingStrategy cache;
     public static boolean cacheClearEnabled;
     public static String compressionKeyStorageTime;
+    public static int maxCompressionTimeMillis;
 
     public static class js {
         public static String srcDir = DefaultConfig.js.srcDir;
@@ -90,6 +95,8 @@ public class PluginConfig {
         enabled = ConfigHelper.getBoolean("press.enabled", DefaultConfig.enabled);
         compressionKeyStorageTime = ConfigHelper.getString("press.key.lifetime",
                 DefaultConfig.compressionKeyStorageTime);
+        maxCompressionTimeMillis = ConfigHelper.getInt("press.compression.maxTimeMillis",
+                DefaultConfig.maxCompressionTimeMillis);
 
         css.srcDir = ConfigHelper.getString("press.css.sourceDir", DefaultConfig.css.srcDir);
         css.compressedDir = ConfigHelper.getString("press.css.outputDir",

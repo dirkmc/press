@@ -148,6 +148,12 @@ When the **#{press.compressed-script}** or **#{press.compressed-stylesheet}** ta
 **press.key.lifetime=2mn**
 
 
+h3. __press.compression.maxTimeMillis__
+
+The maximum amount of time in milli-seconds that compression is allowed to take before a timeout exception is thrown.
+**press.compression.maxTimeMillis=60000**
+
+
 h3. __press.js.sourceDir__
 
 The source directory for javascript files, relative to the application root
