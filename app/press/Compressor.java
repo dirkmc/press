@@ -313,6 +313,8 @@ public abstract class Compressor extends PlayPlugin {
             for (FileInfo componentFile : componentFiles) {
                 compress(compressor, componentFile, out);
             }
+            out.flush();
+            out.close();
             long timeAfter = System.currentTimeMillis();
             PressLogger.trace("Time to compress files for '%s': %d milli-seconds", file
                     .getRealFile().getName(), (timeAfter - timeStart));
