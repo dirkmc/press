@@ -177,10 +177,10 @@ public abstract class Compressor extends PlayPlugin {
         // Do some sanity checking
         if (namesInOrder.size() != fileInfos.size()) {
             String msg = "Number of file compress requests found in response ";
-            msg += "(" + namesInOrder.size() + ")";
+            msg += "(" + namesInOrder.size() + ") ";
             msg += "not equal to number of files added to compression ";
             msg += "(" + fileInfos.size() + "). ";
-            msg += "Please disable the press plugin and report a bug.";
+            msg += "Please report a bug.";
             throw new PressException(msg);
         }
 
@@ -189,7 +189,7 @@ public abstract class Compressor extends PlayPlugin {
             if (!fileInfos.containsKey(fileName)) {
                 String msg = "File compress request for '" + fileName + "' ";
                 msg += "found in response but file was never added to file list. ";
-                msg += "Please disable the press plugin and report a bug.";
+                msg += "Please report a bug.";
                 throw new PressException(msg);
             }
 
@@ -609,7 +609,11 @@ public abstract class Compressor extends PlayPlugin {
      * if the file doesn't exist
      */
     private static VirtualFile getVirtualFile(String filePath) {
-        return VirtualFile.open(Play.getFile(filePath));
+        VirtualFile vf = Play.getVirtualFile(filePath);
+        if (vf == null) {
+            return VirtualFile.open(Play.getFile(filePath));
+        }
+        return vf;
     }
 
     protected static class FileInfo {
