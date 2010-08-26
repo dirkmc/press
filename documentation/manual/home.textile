@@ -205,6 +205,26 @@ When the browser makes a request for **/press/js/sNJSWMCDDFAekXYWryWgigJJ.js**, 
 The process is the same for CSS files.
 
 
+
+h2. <a>Gotchas</a>
+
+Some utilities (such as "Aloha text editor":http://aloha-editor.com) will attempt to build a path using the dynamically generated url paths (eg /press/js/sNJSWMCDDFAekXYWryWgigJJ.js). In order to get around this problem you can add the following at the bottom of your routes file, **after** including the press routes:
+
+bc. GET      /press/js/         staticDir:public/javascripts
+GET      /press/css/         staticDir:public/stylesheets
+
+
+
+h2. <a>Thanks</a>
+
+The following people have contributed to the development of this plugin:
+* John Pletka
+* waxzce
+
+Thanks!
+
+
+
 h2. <a>Questions</a>
 
 If anything in the documentation is not clear, if you find a bug, or if you have questions, please use the play google group and include the word "press" in the subject line:
