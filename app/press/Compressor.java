@@ -114,6 +114,46 @@ public abstract class Compressor extends PlayPlugin {
         return getFileRequestSignature(fileName);
     }
 
+    /**
+     * Called when compressing a single file (as opposed to a group of files).
+     * Compresses the file on the fly, and returns the url to it. The file will
+     * have the same name as the original file with .min appended before the
+     * extension. eg the compressed output of widget.js will be in widget.min.js
+     */
+    public String compressedSingleFileUrl(FileCompressor compressor, String fileName) {
+        PressLogger.trace("Request to compress single file %s", fileName);
+
+        int lastDot = fileName.lastIndexOf('.');
+        String compressedFileName = fileName.substring(0, lastDot) + ".min";
+        compressedFileName += fileName.substring(lastDot);
+
+        // The process for compressing a single file is the same as for a group
+        // of files, the list just has a single entry
+        VirtualFile srcFile = getVirtualFile(srcDir + fileName);
+
+        // Check the file exists
+        if (!srcFile.exists()) {
+            String msg = "Attempt to add file '" + srcFile.getRealFile().getAbsolutePath() + "' ";
+            msg += "to compression but file does not exist.";
+            throw new PressException(msg);
+        }
+
+        List<FileInfo> componentFiles = new ArrayList<FileInfo>(1);
+        componentFiles.add(new FileInfo(compressedFileName, true, srcFile));
+
+        // Check whether the file needs to be generated
+        String outputFilePath = compressedDir + compressedFileName;
+        VirtualFile outputFile = getVirtualFile(outputFilePath);
+        if (useCache(componentFiles, outputFile, extension) && outputFile.exists()) {
+            PressLogger.trace("File has already been compressed");
+        } else {
+            // If so, generate it
+            writeCompressedFile(compressor, componentFiles, outputFile, null);
+        }
+
+        return outputFilePath;
+    }
+
     public String compressedUrl() {
         if (requestKey != null) {
             String msg = "There is more than one " + compressedTagName
@@ -153,10 +193,10 @@ public abstract class Compressor extends PlayPlugin {
             return;
         }
 
-        // The press tag may not always been executed by the template engine
-        // in the same order that the resulting <script> tags would appear in
-        // the HMTL output. So here we scan the output to figure out in what
-        // order the <script> tags should actually be output.
+        // The press tag may not always have been executed by the template
+        // engine in the same order that the resulting <script> tags would
+        // appear in the HMTL output. So here we scan the output to figure out
+        // in what order the <script> tags should actually be output.
         long timeStart = System.currentTimeMillis();
         List<FileInfo> orderedFileNames = getFileListOrder();
         long timeAfter = System.currentTimeMillis();
@@ -269,15 +309,6 @@ public abstract class Compressor extends PlayPlugin {
         PressLogger.trace("Generating compressed file %s from %d component files", file.getName(),
                 componentFiles.size());
 
-        // Create the directory if it doesn't already exist
-        VirtualFile dir = getVirtualFile(compressedDir);
-        if (!dir.exists()) {
-            if (!dir.getRealFile().mkdirs()) {
-                throw new PressException("Could not create directory for compressed file output "
-                        + compressedDir);
-            }
-        }
-
         //
         // We create a temp file to which the output will be written to first,
         // and then rename it to the target file name (because compression can
@@ -297,11 +328,25 @@ public abstract class Compressor extends PlayPlugin {
 
     private static void writeCompressedFile(FileCompressor compressor,
             List<FileInfo> componentFiles, VirtualFile file, File tmp) {
+
+        // Create the directory if it doesn't already exist
+        VirtualFile dir = VirtualFile.open(file.getRealFile().getParent());
+        if (!dir.exists()) {
+            if (!dir.getRealFile().mkdirs()) {
+                throw new PressException("Could not create directory for compressed file output "
+                        + file.getRealFile().getAbsolutePath());
+            }
+        }
+
         Writer out = null;
         try {
+            // If there is a temp file specified, we write to that first
+            // and then move it to the final destination file
+            File destFile = tmp != null ? tmp : file.getRealFile();
+
             // Compress the component files and write the output to the
-            // temporary file
-            out = new BufferedWriter(new FileWriter(tmp));
+            // file
+            out = new BufferedWriter(new FileWriter(destFile));
 
             // Add the last modified dates of each component file to the start
             // of the compressed file so that we can later check if any of them
@@ -319,17 +364,19 @@ public abstract class Compressor extends PlayPlugin {
             PressLogger.trace("Time to compress files for '%s': %d milli-seconds", file
                     .getRealFile().getName(), (timeAfter - timeStart));
 
-            // Once the compressed output has been written to the temporary
-            // file, rename it to overwrite the original file.
-            String msg = "Output written to temporary file\n%s\n";
-            msg += "Moving from tmp path to final path:\n%s";
-            String tmpPath = tmp.getAbsolutePath();
-            String finalPath = file.getRealFile().getAbsolutePath();
-            PressLogger.trace(msg, tmpPath, finalPath);
-            if (!tmp.renameTo(file.getRealFile())) {
-                String ex = "Successfully wrote compressed file to temporary path\n" + tmpPath;
-                ex += "\nBut could not move it to final path\n" + finalPath;
-                throw new PressException(ex);
+            // If the output was written to a temporary file, rename it to
+            // overwrite the true destination file.
+            if (tmp != null) {
+                String msg = "Output written to temporary file\n%s\n";
+                msg += "Moving from tmp path to final path:\n%s";
+                String tmpPath = tmp.getAbsolutePath();
+                String finalPath = file.getRealFile().getAbsolutePath();
+                PressLogger.trace(msg, tmpPath, finalPath);
+                if (!tmp.renameTo(file.getRealFile())) {
+                    String ex = "Successfully wrote compressed file to temporary path\n" + tmpPath;
+                    ex += "\nBut could not move it to final path\n" + finalPath;
+                    throw new PressException(ex);
+                }
             }
 
             PressLogger.trace("Compressed file generation complete:");

@@ -1,7 +1,6 @@
 package press;
 
 import java.io.File;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -18,6 +17,10 @@ public class CSSCompressor extends Compressor {
         super("CSS", EXTENSION, "press.Press.getCompressedCSS", "#{press.stylesheet}",
                 "#{press.compressed-stylesheet}", "<!-- press-css: ", " -->",
                 PluginConfig.css.srcDir, PluginConfig.css.compressedDir);
+    }
+
+    public String compressedSingleFileUrl(String fileName) {
+        return compressedSingleFileUrl(cssFileCompressor, fileName);
     }
 
     public static VirtualFile getCompressedFile(String key) {

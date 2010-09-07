@@ -23,6 +23,10 @@ public class JSCompressor extends Compressor {
                 PluginConfig.js.compressedDir);
     }
 
+    public String compressedSingleFileUrl(String fileName) {
+        return compressedSingleFileUrl(jsFileCompressor, fileName);
+    }
+
     public static VirtualFile getCompressedFile(String key) {
         return getCompressedFile(jsFileCompressor, key, PluginConfig.js.compressedDir, EXTENSION);
     }
@@ -73,5 +77,5 @@ public class JSCompressor extends Compressor {
             error(message, sourceName, line, lineSource, lineOffset);
             return new EvaluatorException(message);
         }
-    };
+    }
 }

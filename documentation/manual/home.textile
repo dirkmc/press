@@ -4,9 +4,7 @@ The __press__ module is a JavaScript and CSS minimizer that is designed to be tr
 Simply replace **==&lt;script>==** tags with **#{press.script}** tags, and **==&lt;link rel="stylesheet">==** tags with **#{press.stylesheet}** tags.
 
 
-h2. <a>Using press</a>
-
-h3. Load the __press__ module
+h2. <a>Enable press</a>
 
 Run the following command to install the __press__ module in your copy of Play, and note the version of the module that is installed.
 
@@ -24,6 +22,7 @@ Add the following line to **conf/routes** to import the __press__ routes. This s
 
 bc. *  /  module:press
 
+h2. <a>Use press to aggregate and compress files</a>
 
 h3. Replace **==&lt;script>==** with **#{press.script}**
 
@@ -76,6 +75,20 @@ bc. <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js
 <link href="/press/css/mDcFcAqEAhDvWvFVBfCOiQJJ.css" rel="stylesheet" type="text/css" charset="utf-8" ></link>
 
 All JavaScript files are compressed into a single JS file and all CSS files are compressed into a single CSS file.  __press__ outputs HTML comments indicating the order in which each JavaScript/CSS file was added to compression
+
+h2. <a>Use press to compress files individually</a>
+
+Instead of compressing files in a group, you can instead compress files individually (without aggregating them). To compress files individually use the **#{press.single-script}** and **#{press.single-stylesheet}** tags.
+
+bc. #{press.single-script 'widget.js' /}
+#{press.single-stylesheet 'header.login.css' /}
+#{press.single-stylesheet 'widget.css' /}
+
+The above example will output something that looks like this:
+
+bc. <script src="/public/javascripts/press/widget.min.js" type="text/javascript" language="javascript" charset="utf-8"></script>
+<link href="/public/stylesheets/press/header.login.min.css" rel="stylesheet" type="text/css" charset="utf-8" ></link>
+<link href="/public/stylesheets/press/widget.min.css" rel="stylesheet" type="text/css" charset="utf-8" ></link>
 
 
 h2. <a>Tips</a>

@@ -25,6 +25,20 @@ public class Plugin extends PlayPlugin {
         cssCompressor.set(new CSSCompressor());
     }
 
+    /**
+     * Get the url for the compressed version of the given JS file, in real time
+     */
+    public static String compressedSingleJSUrl(String fileName) {
+        return jsCompressor.get().compressedSingleFileUrl(fileName);
+    }
+
+    /**
+     * Get the url for the compressed version of the given CSS file, in real time
+     */
+    public static String compressedSingleCSSUrl(String fileName) {
+        return cssCompressor.get().compressedSingleFileUrl(fileName);
+    }
+
     public static String addJS(String fileName, boolean compress) {
         // Add files to the JS compressor
         return jsCompressor.get().add(fileName, compress);
