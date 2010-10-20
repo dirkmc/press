@@ -7,6 +7,7 @@ import play.PlayPlugin;
 public class Plugin extends PlayPlugin {
     static ThreadLocal<JSCompressor> jsCompressor = new ThreadLocal<JSCompressor>();
     static ThreadLocal<CSSCompressor> cssCompressor = new ThreadLocal<CSSCompressor>();
+    static ThreadLocal<Boolean> errorOccurred = new ThreadLocal<Boolean>();
 
     @Override
     public void onApplicationStart() {
@@ -23,17 +24,13 @@ public class Plugin extends PlayPlugin {
         // Before each action, create a new CSS and JS Compressor
         jsCompressor.set(new JSCompressor());
         cssCompressor.set(new CSSCompressor());
+        errorOccurred.set(false);
     }
 
     /**
      * Get the url for the compressed version of the given JS file, in real time
      */
     public static String compressedSingleJSUrl(String fileName) {
-        // This can happen in some extreme error cases
-        if(jsCompressor.get() == null) {
-            return "";
-        }
-        
         return jsCompressor.get().compressedSingleFileUrl(fileName);
     }
 
@@ -41,30 +38,15 @@ public class Plugin extends PlayPlugin {
      * Get the url for the compressed version of the given CSS file, in real time
      */
     public static String compressedSingleCSSUrl(String fileName) {
-        // This can happen in some extreme error cases
-        if(cssCompressor.get() == null) {
-            return "";
-        }
-        
         return cssCompressor.get().compressedSingleFileUrl(fileName);
     }
 
     public static String addJS(String fileName, boolean compress) {
-        // This can happen in some extreme error cases
-        if(jsCompressor.get() == null) {
-            return "";
-        }
-        
         // Add files to the JS compressor
         return jsCompressor.get().add(fileName, compress);
     }
 
     public static String addCSS(String fileName, boolean compress) {
-        // This can happen in some extreme error cases
-        if(cssCompressor.get() == null) {
-            return "";
-        }
-        
         // Add files to the CSS compressor
         return cssCompressor.get().add(fileName, compress);
     }
@@ -75,11 +57,6 @@ public class Plugin extends PlayPlugin {
      * compressed file.
      */
     public static String compressedJSUrl() {
-        // This can happen in some extreme error cases
-        if(jsCompressor.get() == null) {
-            return "";
-        }
-        
         return jsCompressor.get().compressedUrl();
     }
 
@@ -89,11 +66,6 @@ public class Plugin extends PlayPlugin {
      * file.
      */
     public static String compressedCSSUrl() {
-        // This can happen in some extreme error cases
-        if(cssCompressor.get() == null) {
-            return "";
-        }
-        
         return cssCompressor.get().compressedUrl();
     }
 
@@ -107,6 +79,19 @@ public class Plugin extends PlayPlugin {
         }
     }
 
+    @Override
+    public void onInvocationException(Throwable e) {
+         errorOccurred.set(true);
+    }
+    
+    
+    /**
+     * Indicates whether or not an error has occurred
+     */
+    public static boolean hasErrorOccurred() {
+        return errorOccurred.get() == null || errorOccurred.get();
+    }
+    
     /**
      * Indicates whether or not compression is enabled.
      */

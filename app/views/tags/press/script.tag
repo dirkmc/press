@@ -34,7 +34,7 @@
         throw new play.exceptions.TagInternalException("src attribute cannot be empty for press.script tag");
     }
 }%
-#{if press.Plugin.enabled() }
+#{if press.Plugin.enabled() && !press.Plugin.hasErrorOccurred() }
   ${ press.Plugin.addJS(_src, _compress) }
 #{/if}
 #{else}

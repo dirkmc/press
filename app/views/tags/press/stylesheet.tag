@@ -33,7 +33,7 @@
         throw new play.exceptions.TagInternalException("src attribute cannot be empty for stylesheet tag");
     }
 }%
-#{if press.Plugin.enabled() }
+#{if press.Plugin.enabled() && !press.Plugin.hasErrorOccurred() }
   ${ press.Plugin.addCSS(_src, _compress) }
 #{/if}
 #{else}

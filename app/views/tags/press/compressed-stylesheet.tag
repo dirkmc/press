@@ -16,6 +16,6 @@
  *  See the plugin documentation for more information.
  *  
 }*
-#{if press.Plugin.enabled() }
+#{if press.Plugin.enabled() && !press.Plugin.hasErrorOccurred() }
   <link href="${press.Plugin.compressedCSSUrl()}" rel="stylesheet" type="text/css" charset="utf-8" #{if _media} media="${_media}"#{/if}></link>
 #{/if}

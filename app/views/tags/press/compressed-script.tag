@@ -12,6 +12,6 @@
  *  See the plugin documentation for more information.
  *  
 }*
-#{if press.Plugin.enabled() }
+#{if press.Plugin.enabled() && !press.Plugin.hasErrorOccurred() }
   <script src="${press.Plugin.compressedJSUrl()}" type="text/javascript" language="javascript" charset="utf-8"></script>
 #{/if}
