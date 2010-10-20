@@ -235,6 +235,7 @@ h2. <a>Thanks</a>
 The following people have contributed to the development of this plugin:
 * John Pletka
 * waxzce
+* dabeeeenster
 
 Thanks!
 
