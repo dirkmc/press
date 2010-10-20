@@ -221,6 +221,8 @@ The process is the same for CSS files.
 
 h2. <a>Gotchas</a>
 
+Relative image urls will not work in a compressed CSS file because the location of the file that is output by press is not the same as the original file. Use absolute urls.
+
 Some utilities (such as "Aloha text editor":http://aloha-editor.com) will attempt to build a path using the dynamically generated url paths (eg /press/js/sNJSWMCDDFAekXYWryWgigJJ.js). In order to get around this problem you can add the following at the bottom of your routes file, **after** including the press routes:
 
 bc. GET      /press/js/         staticDir:public/javascripts

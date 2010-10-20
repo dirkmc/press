@@ -60,8 +60,7 @@ public class Press extends Controller {
         response += "currently configured to be ";
         response += PluginConfig.compressionKeyStorageTime + ")\n";
         response += "2. There was an exception thrown while rendering the ";
-        response += "page. Note that the press plugin compression will not ";
-        response += "work in error pages (eg 404.html or 500.html).\n";
+        response += "page.\n";
         response += "*/";
         renderBinaryResponse(response);
     }
