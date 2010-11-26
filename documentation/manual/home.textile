@@ -74,7 +74,7 @@ bc. <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js
 <!-- press-css: main.css -->
 <link href="/press/css/mDcFcAqEAhDvWvFVBfCOiQJJ.css" rel="stylesheet" type="text/css" charset="utf-8" ></link>
 
-All JavaScript files are compressed into a single JS file and all CSS files are compressed into a single CSS file.  __press__ outputs HTML comments indicating the order in which each JavaScript/CSS file was added to compression
+All JavaScript files are compressed into a single JS file and all CSS files are compressed into a single CSS file. __press__ outputs HTML comments indicating the order in which each JavaScript/CSS file was added to compression
 
 h2. <a>Use press to compress files individually</a>
 
@@ -97,6 +97,7 @@ h2. <a>Tips</a>
 * The source files will be output in compressed format in the same order as they appear in HTML when compression is disabled.
 * It doesn't matter where the **#{press.compressed-script}** and **#{press.compressed-stylesheet}** tags are declared. Even if there are **#{press.script}** or **#{press.stylesheet}** tags after them in the template, they will still be included in compression. 
 * In dev mode, changes to the JS and CSS files are detected real time. Simply save and refresh the page. See "Caching":#caching for options related to caching and the defaults for each mode.
+* If a file is included twice an exception will be thrown. If it's absolutely necessary, you can include a file twice by passing a flag to the tag. See "Duplicate Files":#duplicate_files
 
 
 h2. <a name="caching">Caching</a>
@@ -218,6 +219,15 @@ When the browser makes a request for **/press/js/sNJSWMCDDFAekXYWryWgigJJ.js**, 
 The process is the same for CSS files.
 
 
+h2. <a name="duplicate_files">Duplicate files</a>
+
+__press__ will throw an exception if you add the same file to compression twice, because usually it's a mistake. In some cases it may be necessary, however, so for those specific cases you can pass the ignoreDuplicates flag to the tag:
+
+bc. #{press.script 'mywidget.js', ignoreDuplicates: true /}
+#{press.stylesheet 'map.css', ignoreDuplicates: true /}
+
+When __press__ is disabled, the first time the tag is called the corresponding file will be output. Subsequent calls to the tag will output nothing. When __press__ is enabled, the file will be included in compression as if it had only been called the first time.
+
 
 h2. <a>Gotchas</a>
 
@@ -236,6 +246,7 @@ The following people have contributed to the development of this plugin:
 * John Pletka
 * waxzce
 * dabeeeenster
+* orefalo
 
 Thanks!
 

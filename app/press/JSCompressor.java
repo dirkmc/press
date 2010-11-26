@@ -15,10 +15,12 @@ import play.vfs.VirtualFile;
 import com.yahoo.platform.yui.compressor.JavaScriptCompressor;
 
 public class JSCompressor extends Compressor {
-    private static final String EXTENSION = ".js";
+    public static final String TAG_NAME = "#{press.script}";
+    public static final String FILE_TYPE = "JavaScript";
+    public static final String EXTENSION = ".js";
 
     public JSCompressor() {
-        super("JavaScript", EXTENSION, "press.Press.getCompressedJS", "#{press.script}",
+        super(FILE_TYPE, EXTENSION, "press.Press.getCompressedJS", TAG_NAME,
                 "#{press.compressed-script}", "<!-- press-js: ", " -->", PluginConfig.js.srcDir,
                 PluginConfig.js.compressedDir);
     }

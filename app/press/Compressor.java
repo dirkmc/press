@@ -94,19 +94,20 @@ public abstract class Compressor extends PlayPlugin {
      * 
      * @return the file request signature to be output in the HTML
      */
-    public String add(String fileName, boolean compress) {
-        if (compress) {
+    public String add(String fileName, boolean compress, boolean ignoreDuplicates) {
+        if (compress && !ignoreDuplicates) {
             PressLogger.trace("Adding %s to output", fileName);
         } else {
-            PressLogger.trace("Adding %s to output (will not be compressed)", fileName);
+            PressLogger.trace("Adding %s to output (compress: %b, ignore duplicates: %b)",
+                    fileName, compress, ignoreDuplicates);
         }
 
         if (fileInfos.containsKey(fileName)) {
-            String msg = "Attempt to add the same " + fileType + " file ";
-            msg += "to compression twice: '" + fileName + "'\n";
-            msg += "Check that you're not including the same file in two different ";
-            msg += tagName + " tags";
-            throw new PressException(msg);
+            if(ignoreDuplicates) {
+                return "";
+            }
+            
+            throw new DuplicateFileException(fileType, fileName, tagName);
         }
 
         fileInfos.put(fileName, new FileInfo(fileName, compress, null));

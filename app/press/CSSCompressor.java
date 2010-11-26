@@ -11,10 +11,12 @@ import play.vfs.VirtualFile;
 import com.yahoo.platform.yui.compressor.CssCompressor;
 
 public class CSSCompressor extends Compressor {
-    private static final String EXTENSION = ".css";
+    public static final String TAG_NAME = "#{press.stylesheet}";
+    public static final String FILE_TYPE = "CSS";
+    public static final String EXTENSION = ".css";
 
     public CSSCompressor() {
-        super("CSS", EXTENSION, "press.Press.getCompressedCSS", "#{press.stylesheet}",
+        super(FILE_TYPE, EXTENSION, "press.Press.getCompressedCSS", TAG_NAME,
                 "#{press.compressed-stylesheet}", "<!-- press-css: ", " -->",
                 PluginConfig.css.srcDir, PluginConfig.css.compressedDir);
     }
