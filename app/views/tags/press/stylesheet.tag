@@ -4,10 +4,6 @@
  *  - media (optional)      media : screen, print, aural, projection ...
  *  - compress (optional)   if set to false, file is added to compressed output,
  *                          but is not itself compressed
- *  - ignoreDuplicates (optional)
- *                          if set to true, the file can be included multiple
- *                          times and press will not throw an error. Only the
- *                          first occurrence of the file will be output.
  *
  *  When the plugin is enabled, outputs a comment and adds the css file to the
  *  list of files to be compressed.
@@ -33,19 +29,15 @@
       _compress = true;
     }
     
-    // ignoreDuplicates defaults to false
-    if(_ignoreDuplicates == null) {
-      _ignoreDuplicates = false;
-    }
-    
     if(! _src) {
         throw new play.exceptions.TagInternalException("src attribute cannot be empty for stylesheet tag");
     }
 
 }%
 #{if press.Plugin.performCompression() }
-  ${ press.Plugin.addCSS(_src, _compress, _ignoreDuplicates) }
+  ${ press.Plugin.addCSS(_src, _compress) }
 #{/if}
-#{elseif press.Plugin.outputCSSTag(_src, _compress, _ignoreDuplicates) }
-  <link href="/public/stylesheets/${_src}" rel="stylesheet" type="text/css" charset="utf-8" #{if _media} media="${_media}"#{/if}></link>
-#{/elseif}
+#{else}
+  %{ press.Plugin.checkForCSSDuplicates(_src, _compress)
+}%  <link href="/public/stylesheets/${_src}" rel="stylesheet" type="text/css" charset="utf-8" #{if _media} media="${_media}"#{/if}></link>
+#{/else}

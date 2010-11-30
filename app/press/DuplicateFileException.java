@@ -12,7 +12,7 @@ public class DuplicateFileException extends PressException {
         msg += "Check that you're not including the same file in two different ";
         msg += tagName + " tags.\n";
         msg += "If you need to include the same file multiple times, set ";
-        msg += "ignoreDuplicates to true in the tag.\n";
+        msg += "the allowDuplicates configuration key to true.\n";
         
         return msg;
     }

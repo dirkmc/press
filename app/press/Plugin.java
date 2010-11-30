@@ -4,7 +4,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import play.Logger;
 import play.PlayPlugin;
 
 public class Plugin extends PlayPlugin {
@@ -49,31 +48,32 @@ public class Plugin extends PlayPlugin {
         return cssCompressor.get().compressedSingleFileUrl(fileName);
     }
 
-    public static boolean outputJSTag(String fileName, boolean compress, boolean ignoreDuplicates) {
-        return outputTag(jsFiles.get(), fileName, compress, ignoreDuplicates,
-                JSCompressor.FILE_TYPE, JSCompressor.TAG_NAME);
-    }
-
-    public static boolean outputCSSTag(String fileName, boolean compress, boolean ignoreDuplicates) {
-        return outputTag(cssFiles.get(), fileName, compress, ignoreDuplicates,
-                CSSCompressor.FILE_TYPE, CSSCompressor.TAG_NAME);
+    /**
+     * Check if the given JS file has already been included.
+     */
+    public static void checkForJSDuplicates(String fileName, boolean compress) {
+        checkForDuplicates(jsFiles.get(), fileName, JSCompressor.FILE_TYPE, JSCompressor.TAG_NAME);
     }
 
     /**
-     * If the file is included multiple times, and ignoreDuplicates is true, we
-     * only want to output the <script> or <link rel="css"> tag the first time.
+     * Check if the given CSS file has already been included.
      */
-    private static boolean outputTag(Map<String, Boolean> files, String fileName, boolean compress,
-            boolean ignoreDuplicates, String fileType, String tagName) {
-        
+    public static void checkForCSSDuplicates(String fileName, boolean compress) {
+        checkForDuplicates(cssFiles.get(), fileName, CSSCompressor.FILE_TYPE,
+                CSSCompressor.TAG_NAME);
+    }
+
+    private static void checkForDuplicates(Map<String, Boolean> files, String fileName,
+            String fileType, String tagName) {
+
         if (!files.containsKey(fileName)) {
             files.put(fileName, true);
-            return true;
+            return;
         }
 
-        if (ignoreDuplicates) {
-            PressLogger.trace("Ignoring duplicate file %s", fileName);
-            return false;
+        if (PluginConfig.allowDuplicates()) {
+            PressLogger.trace("Allowing duplicate file %s", fileName);
+            return;
         }
 
         throw new DuplicateFileException(fileType, fileName, tagName);
@@ -83,16 +83,16 @@ public class Plugin extends PlayPlugin {
      * Adds the given file to the JS compressor, returning the file signature to
      * be output in HTML
      */
-    public static String addJS(String fileName, boolean compress, boolean ignoreDuplicates) {
-        return jsCompressor.get().add(fileName, compress, ignoreDuplicates);
+    public static String addJS(String fileName, boolean compress) {
+        return jsCompressor.get().add(fileName, compress);
     }
 
     /**
      * Adds the given file to the CSS compressor, returning the file signature
      * to be output in HTML
      */
-    public static String addCSS(String fileName, boolean compress, boolean ignoreDuplicates) {
-        return cssCompressor.get().add(fileName, compress, ignoreDuplicates);
+    public static String addCSS(String fileName, boolean compress) {
+        return cssCompressor.get().add(fileName, compress);
     }
 
     /**

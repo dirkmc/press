@@ -29,6 +29,10 @@ public class PluginConfig {
         // to occur before a timeout exception is thrown.
         public static final int maxCompressionTimeMillis = 60000;
 
+        // Whether to allow the same file to be added to compression multiple
+        // times
+        public static final boolean allowDuplicates = false;
+
         public static class js {
             // The directory where source javascript files are read from
             public static final String srcDir = "/public/javascripts/";
@@ -61,6 +65,7 @@ public class PluginConfig {
     public static boolean cacheClearEnabled;
     public static String compressionKeyStorageTime;
     public static int maxCompressionTimeMillis;
+    public static boolean allowDuplicates;
 
     public static class js {
         public static String srcDir = DefaultConfig.js.srcDir;
@@ -80,6 +85,10 @@ public class PluginConfig {
         public static int lineBreak = DefaultConfig.css.lineBreak;
     }
 
+    public static boolean allowDuplicates() {
+        return allowDuplicates;
+    }
+
     /**
      * Reads from the config file into memory. If the config file doesn't exist
      * or is deleted, uses the default values.
@@ -97,6 +106,8 @@ public class PluginConfig {
                 DefaultConfig.compressionKeyStorageTime);
         maxCompressionTimeMillis = ConfigHelper.getInt("press.compression.maxTimeMillis",
                 DefaultConfig.maxCompressionTimeMillis);
+        allowDuplicates = ConfigHelper.getBoolean("press.allowDuplicates",
+                DefaultConfig.allowDuplicates);
 
         css.srcDir = ConfigHelper.getString("press.css.sourceDir", DefaultConfig.css.srcDir);
         css.compressedDir = ConfigHelper.getString("press.css.outputDir",
@@ -127,10 +138,11 @@ public class PluginConfig {
     }
 
     private static void logConfig() {
-        PressLogger.trace("enabled: %s", enabled);
+        PressLogger.trace("enabled: %b", enabled);
         PressLogger.trace("caching strategy: %s", cache);
         PressLogger.trace("cache publicly clearable: %s", cacheClearEnabled);
         PressLogger.trace("compression key storage time: %s", compressionKeyStorageTime);
+        PressLogger.trace("allow duplicates: %b", allowDuplicates);
         PressLogger.trace("css source directory: %s", css.srcDir);
         PressLogger.trace("css compressed output directory: %s", css.compressedDir);
         PressLogger.trace("js source directory: %s", js.srcDir);

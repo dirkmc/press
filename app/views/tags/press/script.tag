@@ -4,10 +4,6 @@
  *  - media (optional)     media : screen, print, aural, projection ...
  *  - compress (optional)  if set to false, file is added to compressed output,
  *                         but is not itself compressed
- *  - ignoreDuplicates (optional)
- *                         if set to true, the file can be included multiple
- *                         times and press will not throw an error. Only the
- *                         first ocurrence of the file will be output.
  *
  *  When the plugin is enabled, outputs a comment and adds the script to the
  *  list of files to be compressed.
@@ -34,19 +30,15 @@
       _compress = true;
     }
     
-    // ignoreDuplicates defaults to false
-    if(_ignoreDuplicates == null) {
-      _ignoreDuplicates = false;
-    }
-    
     if(! _src) {
         throw new play.exceptions.TagInternalException("src attribute cannot be empty for press.script tag");
     }
 
 }%
 #{if press.Plugin.performCompression() }
-  ${ press.Plugin.addJS(_src, _compress, _ignoreDuplicates) }
+  ${ press.Plugin.addJS(_src, _compress) }
 #{/if}
-#{elseif press.Plugin.outputJSTag(_src, _compress, _ignoreDuplicates) }
-  <script src="/public/javascripts/${_src}" type="text/javascript" language="javascript" charset="utf-8"></script>
-#{/elseif}
+#{else}
+  %{ press.Plugin.checkForJSDuplicates(_src, _compress)
+}%  <script src="/public/javascripts/${_src}" type="text/javascript" language="javascript" charset="utf-8"></script>
+#{/else}

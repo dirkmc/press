@@ -66,7 +66,7 @@ public abstract class Compressor extends PlayPlugin {
     String requestKey = null;
 
     // The list of files compressed as part of this request
-    Map<String, FileInfo> fileInfos;
+    Map<String, List<FileInfo>> fileInfos;
 
     protected interface FileCompressor {
         public void compress(String fileName, Reader in, Writer out) throws Exception;
@@ -76,7 +76,7 @@ public abstract class Compressor extends PlayPlugin {
             String tagName, String compressedTagName, String pressRequestStart,
             String pressRequestEnd, String srcDir, String compressedDir) {
 
-        this.fileInfos = new HashMap<String, FileInfo>();
+        this.fileInfos = new HashMap<String, List<FileInfo>>();
 
         this.fileType = fileType;
         this.extension = extension;
@@ -94,25 +94,25 @@ public abstract class Compressor extends PlayPlugin {
      * 
      * @return the file request signature to be output in the HTML
      */
-    public String add(String fileName, boolean compress, boolean ignoreDuplicates) {
-        if (compress && !ignoreDuplicates) {
+    public String add(String fileName, boolean compress) {
+        if (compress) {
             PressLogger.trace("Adding %s to output", fileName);
         } else {
-            PressLogger.trace("Adding %s to output (compress: %b, ignore duplicates: %b)",
-                    fileName, compress, ignoreDuplicates);
+            PressLogger.trace("Adding uncompressed file %s to output", fileName);
         }
 
-        if (fileInfos.containsKey(fileName)) {
-            if(ignoreDuplicates) {
-                return "";
-            }
-            
+        if (fileInfos.containsKey(fileName) && !PluginConfig.allowDuplicates()) {
             throw new DuplicateFileException(fileType, fileName, tagName);
         }
 
-        fileInfos.put(fileName, new FileInfo(fileName, compress, null));
+        List<FileInfo> fileInfoList = fileInfos.get(fileName);
+        if (fileInfoList == null) {
+            fileInfoList = new ArrayList<FileInfo>();
+            fileInfos.put(fileName, fileInfoList);
+        }
+        fileInfoList.add(new FileInfo(fileName, compress, null));
 
-        return getFileRequestSignature(fileName);
+        return getFileRequestSignature(getFileNameWithIndex(fileName, (fileInfoList.size() - 1)));
     }
 
     /**
@@ -167,7 +167,7 @@ public abstract class Compressor extends PlayPlugin {
         params.put("key", requestKey);
         ActionDefinition route = Router.reverse(getCompressedFileAction, params);
 
-        int numFiles = fileInfos.size();
+        int numFiles = getTotalFileCount();
         PressLogger.trace("Adding key %s for compression of %d files", requestKey, numFiles);
 
         return route.url;
@@ -182,7 +182,7 @@ public abstract class Compressor extends PlayPlugin {
             // to compression but they will not be output. So throw an
             // exception telling the user he needs to add some files.
             if (fileInfos.size() > 0) {
-                String msg = fileInfos.size() + " files added to compression with ";
+                String msg = getTotalFileCount() + " files added to compression with ";
                 msg += tagName + " tag but no " + compressedTagName + " tag was found. ";
                 msg += "You must include a " + compressedTagName + " tag in the template ";
                 msg += "to output the compressed content of these files: ";
@@ -216,7 +216,7 @@ public abstract class Compressor extends PlayPlugin {
         List<FileInfo> filesInOrder = new ArrayList<FileInfo>(namesInOrder.size());
 
         // Do some sanity checking
-        if (namesInOrder.size() != fileInfos.size()) {
+        if (namesInOrder.size() != getTotalFileCount()) {
             String msg = "Number of file compress requests found in response ";
             msg += "(" + namesInOrder.size() + ") ";
             msg += "not equal to number of files added to compression ";
@@ -226,7 +226,9 @@ public abstract class Compressor extends PlayPlugin {
         }
 
         // Copy the FileInfo from the map into an array, in order
-        for (String fileName : namesInOrder) {
+        for (String fileNameWithIndex : namesInOrder) {
+            String fileName = getFileName(fileNameWithIndex);
+            int fileIndex = getFileIndex(fileNameWithIndex);
             if (!fileInfos.containsKey(fileName)) {
                 String msg = "File compress request for '" + fileName + "' ";
                 msg += "found in response but file was never added to file list. ";
@@ -234,7 +236,7 @@ public abstract class Compressor extends PlayPlugin {
                 throw new PressException(msg);
             }
 
-            filesInOrder.add(fileInfos.get(fileName));
+            filesInOrder.add(fileInfos.get(fileName).get(fileIndex));
         }
 
         return filesInOrder;
@@ -650,6 +652,31 @@ public abstract class Compressor extends PlayPlugin {
         }
 
         return filesInOrder;
+    }
+
+    private String getFileNameWithIndex(String fileName, int index) {
+        return fileName + "[" + index + "]";
+    }
+
+    private String getFileName(String fileNameWithIndex) {
+        int indexPart = fileNameWithIndex.lastIndexOf('[');
+        return fileNameWithIndex.substring(0, indexPart);
+    }
+
+    private int getFileIndex(String fileNameWithIndex) {
+        int indexPartBegin = fileNameWithIndex.lastIndexOf('[');
+        String indexPart = fileNameWithIndex.substring(indexPartBegin + 1, fileNameWithIndex
+                .length() - 1);
+        return Integer.parseInt(indexPart);
+    }
+
+    private int getTotalFileCount() {
+        int i = 0;
+        for (String fileName : fileInfos.keySet()) {
+            i += fileInfos.get(fileName).size();
+        }
+
+        return i;
     }
 
     /**
