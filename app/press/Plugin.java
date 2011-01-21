@@ -71,11 +71,6 @@ public class Plugin extends PlayPlugin {
             return;
         }
 
-        if (PluginConfig.allowDuplicates()) {
-            PressLogger.trace("Allowing duplicate file %s", fileName);
-            return;
-        }
-
         throw new DuplicateFileException(fileType, fileName, tagName);
     }
 

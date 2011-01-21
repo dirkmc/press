@@ -10,9 +10,7 @@ public class DuplicateFileException extends PressException {
         String msg = "Attempt to add the same " + fileType + " file ";
         msg += "to compression twice: '" + fileName + "'\n";
         msg += "Check that you're not including the same file in two different ";
-        msg += tagName + " tags.\n";
-        msg += "If you need to include the same file multiple times, set ";
-        msg += "the allowDuplicates configuration key to true.\n";
+        msg += tagName + " tags.";
         
         return msg;
     }

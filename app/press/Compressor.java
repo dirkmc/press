@@ -101,7 +101,7 @@ public abstract class Compressor extends PlayPlugin {
             PressLogger.trace("Adding uncompressed file %s to output", fileName);
         }
 
-        if (fileInfos.containsKey(fileName) && !PluginConfig.allowDuplicates()) {
+        if (fileInfos.containsKey(fileName)) {
             throw new DuplicateFileException(fileType, fileName, tagName);
         }
 
