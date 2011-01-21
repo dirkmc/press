@@ -105,6 +105,10 @@ public abstract class Compressor extends PlayPlugin {
             throw new DuplicateFileException(fileType, fileName, tagName);
         }
 
+        // Check that the file exists
+        checkFileExists(fileName);
+
+        // Add the file to the list of files to be compressed
         List<FileInfo> fileInfoList = fileInfos.get(fileName);
         if (fileInfoList == null) {
             fileInfoList = new ArrayList<FileInfo>();
@@ -130,19 +134,11 @@ public abstract class Compressor extends PlayPlugin {
 
         // The process for compressing a single file is the same as for a group
         // of files, the list just has a single entry
-        VirtualFile srcFile = getVirtualFile(srcDir + fileName);
-
-        // Check the file exists
-        if (!srcFile.exists()) {
-            String msg = "Attempt to add file '" + srcFile.getRealFile().getAbsolutePath() + "' ";
-            msg += "to compression but file does not exist.";
-            throw new PressException(msg);
-        }
-
+        VirtualFile srcFile = checkFileExists(fileName);
         List<FileInfo> componentFiles = new ArrayList<FileInfo>(1);
         componentFiles.add(new FileInfo(compressedFileName, true, srcFile));
 
-        // Check whether the file needs to be generated
+        // Check whether the compressed file needs to be generated
         String outputFilePath = compressedDir + compressedFileName;
         VirtualFile outputFile = getVirtualFile(outputFilePath);
         if (useCache(componentFiles, outputFile, extension) && outputFile.exists()) {
@@ -677,6 +673,30 @@ public abstract class Compressor extends PlayPlugin {
         }
 
         return i;
+    }
+
+    /**
+     * Gets the file with the given name. If the file does not exist in the
+     * source directory, throws an exception.
+     */
+    public VirtualFile checkFileExists(String fileName) {
+        return checkFileExists(fileName, srcDir);
+    }
+
+    /**
+     * Gets the file with the given name. If the file does not exist in the
+     * source directory, throws an exception.
+     */
+    public static VirtualFile checkFileExists(String fileName, String sourceDirectory) {
+        VirtualFile srcFile = getVirtualFile(sourceDirectory + fileName);
+
+        // Check the file exists
+        if (!srcFile.exists()) {
+            String msg = "Attempt to add file '" + srcFile.getRealFile().getAbsolutePath() + "' ";
+            msg += "to compression but file does not exist.";
+            throw new PressException(msg);
+        }
+        return srcFile;
     }
 
     /**

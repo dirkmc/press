@@ -39,5 +39,6 @@
 #{/if}
 #{else}
   %{ press.Plugin.checkForCSSDuplicates(_src, _compress)
-}%  <link href="/public/stylesheets/${_src}" rel="stylesheet" type="text/css" charset="utf-8" #{if _media} media="${_media}"#{/if}></link>
+}%  <link href="/public/stylesheets/${_src}" rel="stylesheet" type="text/css" charset="utf-8"#{if _media} media="${_media}"#{/if}>#{if !press.PluginConfig.htmlCompatible}</link>#{/if}
+
 #{/else}

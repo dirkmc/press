@@ -17,5 +17,5 @@
  *  
 }*
 #{if press.Plugin.enabled() && !press.Plugin.hasErrorOccurred() }
-  <link href="${press.Plugin.compressedCSSUrl()}" rel="stylesheet" type="text/css" charset="utf-8" #{if _media} media="${_media}"#{/if}></link>
+  <link href="${press.Plugin.compressedCSSUrl()}" rel="stylesheet" type="text/css" charset="utf-8"#{if _media} media="${_media}"#{/if}>#{if !press.PluginConfig.htmlCompatible}</link>#{/if}
 #{/if}

@@ -29,6 +29,11 @@ public class PluginConfig {
         // to occur before a timeout exception is thrown.
         public static final int maxCompressionTimeMillis = 60000;
 
+        // Indicates whether the code output by press is compatible with the
+        // HTML standard. For example HTML requires that a closing LINK tag MUST
+        // NOT be output, while XHTML requires that it MUST be output
+        public static final boolean htmlCompatible = false;
+
         public static class js {
             // The directory where source javascript files are read from
             public static final String srcDir = "/public/javascripts/";
@@ -61,6 +66,7 @@ public class PluginConfig {
     public static boolean cacheClearEnabled;
     public static String compressionKeyStorageTime;
     public static int maxCompressionTimeMillis;
+    public static boolean htmlCompatible;
 
     public static class js {
         public static String srcDir = DefaultConfig.js.srcDir;
@@ -97,6 +103,8 @@ public class PluginConfig {
                 DefaultConfig.compressionKeyStorageTime);
         maxCompressionTimeMillis = ConfigHelper.getInt("press.compression.maxTimeMillis",
                 DefaultConfig.maxCompressionTimeMillis);
+        htmlCompatible = ConfigHelper.getBoolean("press.htmlCompatible",
+                DefaultConfig.htmlCompatible);
 
         css.srcDir = ConfigHelper.getString("press.css.sourceDir", DefaultConfig.css.srcDir);
         css.compressedDir = ConfigHelper.getString("press.css.outputDir",
@@ -131,6 +139,7 @@ public class PluginConfig {
         PressLogger.trace("caching strategy: %s", cache);
         PressLogger.trace("cache publicly clearable: %s", cacheClearEnabled);
         PressLogger.trace("compression key storage time: %s", compressionKeyStorageTime);
+        PressLogger.trace("HTML compatible: %b", htmlCompatible);
         PressLogger.trace("css source directory: %s", css.srcDir);
         PressLogger.trace("css compressed output directory: %s", css.compressedDir);
         PressLogger.trace("js source directory: %s", js.srcDir);

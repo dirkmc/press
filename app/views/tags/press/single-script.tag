@@ -25,5 +25,6 @@
   <script src="${press.Plugin.compressedSingleJSUrl(_src)}" type="text/javascript" language="javascript" charset="utf-8"></script>
 #{/if}
 #{else}
+  %{ press.Plugin.checkJSFileExists(_src) }%
   <script src="/public/javascripts/${_src}" type="text/javascript" language="javascript" charset="utf-8"></script>
 #{/else}

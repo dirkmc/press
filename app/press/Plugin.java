@@ -49,9 +49,24 @@ public class Plugin extends PlayPlugin {
     }
 
     /**
+     * Check if the given JS file exists.
+     */
+    public static void checkJSFileExists(String fileName) {
+        JSCompressor.checkJSFileExists(fileName);
+    }
+
+    /**
+     * Check if the given CSS file exists.
+     */
+    public static void checkCSSFileExists(String fileName) {
+        CSSCompressor.checkCSSFileExists(fileName);
+    }
+
+    /**
      * Check if the given JS file has already been included.
      */
     public static void checkForJSDuplicates(String fileName, boolean compress) {
+        checkJSFileExists(fileName);
         checkForDuplicates(jsFiles.get(), fileName, JSCompressor.FILE_TYPE, JSCompressor.TAG_NAME);
     }
 
@@ -59,6 +74,7 @@ public class Plugin extends PlayPlugin {
      * Check if the given CSS file has already been included.
      */
     public static void checkForCSSDuplicates(String fileName, boolean compress) {
+        checkCSSFileExists(fileName);
         checkForDuplicates(cssFiles.get(), fileName, CSSCompressor.FILE_TYPE,
                 CSSCompressor.TAG_NAME);
     }

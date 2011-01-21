@@ -33,6 +33,10 @@ public class JSCompressor extends Compressor {
         return getCompressedFile(jsFileCompressor, key, PluginConfig.js.compressedDir, EXTENSION);
     }
 
+    public static VirtualFile checkJSFileExists(String fileName) {
+        return checkFileExists(fileName, PluginConfig.js.srcDir);
+    }
+    
     public static List<File> clearCache() {
         return clearCache(PluginConfig.js.compressedDir, EXTENSION);
     }

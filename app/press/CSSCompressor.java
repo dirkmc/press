@@ -29,6 +29,10 @@ public class CSSCompressor extends Compressor {
         return getCompressedFile(cssFileCompressor, key, PluginConfig.css.compressedDir, EXTENSION);
     }
 
+    public static VirtualFile checkCSSFileExists(String fileName) {
+        return checkFileExists(fileName, PluginConfig.css.srcDir);
+    }
+    
     public static List<File> clearCache() {
         return clearCache(PluginConfig.css.compressedDir, EXTENSION);
     }
