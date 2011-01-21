@@ -188,6 +188,11 @@ h3. __press.css.outputDir__
 The output directory where compressed css files will be written to, relative to the application root. Note: This directory will be created if it doesn't exist.
 **press.css.outputDir=/public/stylesheets/press/**
 
+h3. __press.htmlCompatible__
+
+By default, the output produced by press is compatible with XHTML. This means that ==&lt;link>== tags are closed. If __press.htmlCompatible__ is **true**, the output will be compatible with HTML, meaning that ==&lt;link>== tags will not be closed.
+**press.htmlCompatible=false**
+
 
 h3. Options for the YUI compressor
 
@@ -238,6 +243,7 @@ The following people have contributed to the development of this plugin:
 * waxzce
 * dabeeeenster
 * orefalo
+* nzakas
 
 Thanks!
 
