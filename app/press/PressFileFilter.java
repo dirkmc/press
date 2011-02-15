@@ -19,4 +19,4 @@ public class PressFileFilter implements FileFilter {
         // compressed file
         return Compressor.extractHeaderContent(file) != null;
     }
-};
+}
