@@ -98,6 +98,7 @@ h2. <a>Tips</a>
 * It doesn't matter where the **#{press.compressed-script}** and **#{press.compressed-stylesheet}** tags are declared. Even if there are **#{press.script}** or **#{press.stylesheet}** tags after them in the template, they will still be included in compression. 
 * In dev mode, changes to the JS and CSS files are detected real time. Simply save and refresh the page. See "Caching":#caching for options related to caching and the defaults for each mode.
 * If the same file is included twice an exception will be thrown.
+* Don't use press from within a 404.html or 500.html template. When invoking an error template Play changes the request object causing press to fail.
 
 
 h2. <a name="caching">Caching</a>
@@ -234,6 +235,7 @@ Some utilities (such as "Aloha text editor":http://aloha-editor.com) will attemp
 bc. GET      /press/js/         staticDir:public/javascripts
 GET      /press/css/         staticDir:public/stylesheets
 
+Don't use press from within a 404.html or 500.html template. When invoking an error template Play changes the request object causing press to fail.
 
 
 h2. <a>Thanks</a>

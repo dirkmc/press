@@ -65,6 +65,10 @@ public abstract class Compressor extends PlayPlugin {
     // The key used to identify this request
     String requestKey = null;
 
+    // Keep track of the response object created when compression started. It
+    // can change if there's a 404 or 500 error.
+    Response currentResponse;
+
     // The list of files compressed as part of this request
     Map<String, List<FileInfo>> fileInfos;
 
@@ -77,6 +81,7 @@ public abstract class Compressor extends PlayPlugin {
             String pressRequestEnd, String srcDir, String compressedDir) {
 
         this.fileInfos = new HashMap<String, List<FileInfo>>();
+        this.currentResponse = Response.current();
 
         this.fileType = fileType;
         this.extension = extension;
@@ -217,7 +222,9 @@ public abstract class Compressor extends PlayPlugin {
             msg += "(" + namesInOrder.size() + ") ";
             msg += "not equal to number of files added to compression ";
             msg += "(" + fileInfos.size() + "). ";
-            msg += "Please report a bug.";
+            msg += "Please report a bug.\n";
+            msg += "Note: Do not use press tags within a 404.html or 500.html ";
+            msg += "template, it will not work.";
             throw new PressException(msg);
         }
 
@@ -613,14 +620,9 @@ public abstract class Compressor extends PlayPlugin {
     /**
      * Get the content of the response sent to the client as a String
      */
-    protected static String getResponseContent() {
+    protected String getResponseContent() {
         try {
-            String content = (String) Request.current().args.get("responseString");
-            if (content == null) {
-                content = Response.current.get().out.toString("utf-8");
-                Request.current().args.put("responseString", content);
-            }
-            return content;
+            return currentResponse.out.toString("utf-8");
         } catch (UnsupportedEncodingException e) {
             throw new UnexpectedException(e);
         }
