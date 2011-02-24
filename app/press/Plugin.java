@@ -34,94 +34,97 @@ public class Plugin extends PlayPlugin {
     }
 
     /**
-     * Get the url for the compressed version of the given JS file, in real time
+     * Add a single JS file to compression
      */
-    public static String compressedSingleJSUrl(String fileName) {
-        return jsCompressor.get().compressedSingleFileUrl(fileName);
-    }
-
-    /**
-     * Get the url for the compressed version of the given CSS file, in real
-     * time
-     */
-    public static String compressedSingleCSSUrl(String fileName) {
-        return cssCompressor.get().compressedSingleFileUrl(fileName);
-    }
-
-    /**
-     * Check if the given JS file exists.
-     */
-    public static void checkJSFileExists(String fileName) {
-        JSCompressor.checkJSFileExists(fileName);
-    }
-
-    /**
-     * Check if the given CSS file exists.
-     */
-    public static void checkCSSFileExists(String fileName) {
-        CSSCompressor.checkCSSFileExists(fileName);
-    }
-
-    /**
-     * Check if the given JS file has already been included.
-     */
-    public static void checkForJSDuplicates(String fileName, boolean compress) {
+    public static String addSingleJS(String fileName) {
         checkJSFileExists(fileName);
-        checkForDuplicates(jsFiles.get(), fileName, JSCompressor.FILE_TYPE, JSCompressor.TAG_NAME);
-    }
-
-    /**
-     * Check if the given CSS file has already been included.
-     */
-    public static void checkForCSSDuplicates(String fileName, boolean compress) {
-        checkCSSFileExists(fileName);
-        checkForDuplicates(cssFiles.get(), fileName, CSSCompressor.FILE_TYPE,
-                CSSCompressor.TAG_NAME);
-    }
-
-    private static void checkForDuplicates(Map<String, Boolean> files, String fileName,
-            String fileType, String tagName) {
-
-        if (!files.containsKey(fileName)) {
-            files.put(fileName, true);
-            return;
+        JSCompressor compressor = jsCompressor.get();
+        String src = null;
+        if (performCompression()) {
+            src = compressor.compressedSingleFileUrl(fileName);
+        } else {
+            src = compressor.srcDir + fileName;
         }
 
-        throw new DuplicateFileException(fileType, fileName, tagName);
+        return getScriptTag(src);
     }
 
     /**
-     * Adds the given file to the JS compressor, returning the file signature to
-     * be output in HTML
+     * Add a single CSS file to compression
      */
-    public static String addJS(String fileName, boolean compress) {
-        return jsCompressor.get().add(fileName, compress);
+    public static String addSingleCSS(String fileName) {
+        checkCSSFileExists(fileName);
+        CSSCompressor compressor = cssCompressor.get();
+        String src = null;
+        if (performCompression()) {
+            src = compressor.compressedSingleFileUrl(fileName);
+        } else {
+            src = compressor.srcDir + fileName;
+        }
+
+        return getLinkTag(src);
     }
 
     /**
-     * Adds the given file to the CSS compressor, returning the file signature
-     * to be output in HTML
+     * Adds the given source file(s) to the JS compressor, returning the file
+     * signature to be output in HTML
      */
-    public static String addCSS(String fileName, boolean compress) {
-        return cssCompressor.get().add(fileName, compress);
+    public static String addJS(String src, boolean compress) {
+        JSCompressor compressor = jsCompressor.get();
+        String baseUrl = compressor.srcDir;
+        String result = "";
+        for (String fileName : PressFileGlobber.getResolvedFiles(src, baseUrl)) {
+            checkForJSDuplicates(fileName);
+
+            if (performCompression()) {
+                result += compressor.add(fileName, compress) + "\n";
+            } else {
+                result += getScriptTag(baseUrl + fileName);
+            }
+        }
+
+        return result;
     }
 
     /**
-     * Called when the template outputs the tag indicating where the compressed
-     * javascript should be included. This method returns the URL of the
-     * compressed file.
+     * Adds the given source file(s) to the CSS compressor, returning the file
+     * signature to be output in HTML
      */
-    public static String compressedJSUrl() {
-        return jsCompressor.get().compressedUrl();
+    public static String addCSS(String src, boolean compress) {
+        CSSCompressor compressor = cssCompressor.get();
+        String baseUrl = compressor.srcDir;
+        String result = "";
+        for (String fileName : PressFileGlobber.getResolvedFiles(src, baseUrl)) {
+            checkForCSSDuplicates(fileName);
+
+            if (performCompression()) {
+                result += compressor.add(fileName, compress) + "\n";
+            } else {
+                result += getLinkTag(baseUrl + fileName);
+            }
+        }
+
+        return result;
     }
 
     /**
-     * Called when the template outputs the tag indicating where the compressed
-     * CSS should be included. This method returns the URL of the compressed
-     * file.
+     * Outputs the tag indicating where the compressed CSS should be included.
      */
-    public static String compressedCSSUrl() {
-        return cssCompressor.get().compressedUrl();
+    public static String compressedCSSTag() {
+        if (performCompression()) {
+            return getLinkTag(cssCompressor.get().compressedUrl());
+        }
+        return "";
+    }
+
+    /**
+     * Outputs the tag indicating where the compressed CSS should be included.
+     */
+    public static String compressedJSTag() {
+        if (performCompression()) {
+            return getScriptTag(jsCompressor.get().compressedUrl());
+        }
+        return "";
     }
 
     @Override
@@ -147,16 +150,70 @@ public class Plugin extends PlayPlugin {
     }
 
     /**
-     * Indicates whether or not compression is enabled.
-     */
-    public static boolean enabled() {
-        return PluginConfig.enabled;
-    }
-
-    /**
      * Indicates whether or not to compress files
      */
     public static boolean performCompression() {
-        return enabled() && !hasErrorOccurred();
+        return PluginConfig.enabled && !hasErrorOccurred();
+    }
+
+    /**
+     * Check if the given JS file exists.
+     */
+    public static void checkJSFileExists(String fileName) {
+        JSCompressor.checkJSFileExists(fileName);
+    }
+
+    /**
+     * Check if the given CSS file exists.
+     */
+    public static void checkCSSFileExists(String fileName) {
+        CSSCompressor.checkCSSFileExists(fileName);
+    }
+
+    /**
+     * Check if the given JS file has already been included.
+     */
+    public static void checkForJSDuplicates(String fileName) {
+        checkJSFileExists(fileName);
+        checkForDuplicates(jsFiles.get(), fileName, JSCompressor.FILE_TYPE, JSCompressor.TAG_NAME);
+    }
+
+    /**
+     * Check if the given CSS file has already been included.
+     */
+    public static void checkForCSSDuplicates(String fileName) {
+        checkCSSFileExists(fileName);
+        checkForDuplicates(cssFiles.get(), fileName, CSSCompressor.FILE_TYPE,
+                CSSCompressor.TAG_NAME);
+    }
+
+    private static void checkForDuplicates(Map<String, Boolean> files, String fileName,
+            String fileType, String tagName) {
+
+        if (!files.containsKey(fileName)) {
+            files.put(fileName, true);
+            return;
+        }
+
+        throw new DuplicateFileException(fileType, fileName, tagName);
+    }
+
+    /**
+     * Returns a script tag which can be used to output uncompressed JavaScript
+     * tags within the HTML.
+     */
+    private static String getScriptTag(String src) {
+        return "<script src=\"" + src
+                + "\" type=\"text/javascript\" language=\"javascript\" charset=\"utf-8\">"
+                + "</script>\n";
+    }
+
+    /**
+     * Returns a link tag which can be used to output uncompressed CSS tags
+     * within the HTML.
+     */
+    private static String getLinkTag(String src) {
+        return "<link href=\"" + src + "\" rel=\"stylesheet\" type=\"text/css\" charset=\"utf-8\">"
+                + (press.PluginConfig.htmlCompatible ? "" : "</link>") + "\n";
     }
 }

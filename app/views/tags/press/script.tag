@@ -15,6 +15,8 @@
  *  #{press.script src: "widget.js"}
  *  #{press.script src: "ui.js"}
  *  #{press.script src: "validation.js"}
+ *  #{press.script src: "path/*.js"} <!-- include all JS from "path" -->
+ *  #{press.script src: "path/**.js"} <!-- recursively include all JS from "path" -->
  *
  *  #{press.compressed-script}
  *
@@ -35,10 +37,4 @@
     }
 
 }%
-#{if press.Plugin.performCompression() }
-  ${ press.Plugin.addJS(_src, _compress) }
-#{/if}
-#{else}
-  %{ press.Plugin.checkForJSDuplicates(_src, _compress)
-}%  <script src="/public/javascripts/${_src}" type="text/javascript" language="javascript" charset="utf-8"></script>
-#{/else}
+${ press.Plugin.addJS(_src, _compress) }

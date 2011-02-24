@@ -90,6 +90,18 @@ bc. <script src="/public/javascripts/press/widget.min.js" type="text/javascript"
 <link href="/public/stylesheets/press/header.login.min.css" rel="stylesheet" type="text/css" charset="utf-8" ></link>
 <link href="/public/stylesheets/press/widget.min.css" rel="stylesheet" type="text/css" charset="utf-8" ></link>
 
+h2. <a>Wildcard matching</a>
+
+When managing a lot of CSS or JS files in a project, instead of manually maintaining a press tag in a template for each file, you can include all files from a specific path by wildcard:
+
+bc. #{press.script '*.js' /}
+#{press.script 'some/path/*.js' /}
+
+Any files matching the given extension are included, in ascending alphabetical order.  Note, however, that partial glob patterns such as "path/prefix-*.js" aren't currently supported.  The search can be made recursive by adding another asterisk:
+
+bc. #{press.script '**.js' /}
+
+The above will include all .js files from under your JavaScripts path ("/public/javascripts" for example).
 
 h2. <a>Tips</a>
 
