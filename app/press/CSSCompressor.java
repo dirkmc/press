@@ -1,12 +1,12 @@
 package press;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.List;
 
 import play.vfs.VirtualFile;
+import press.io.CompressedFile;
+import press.io.FileIO;
 
 import com.yahoo.platform.yui.compressor.CssCompressor;
 
@@ -16,24 +16,23 @@ public class CSSCompressor extends Compressor {
     public static final String EXTENSION = ".css";
 
     public CSSCompressor() {
-        super(FILE_TYPE, EXTENSION, "press.Press.getCompressedCSS", TAG_NAME,
-                "#{press.compressed-stylesheet}", "<!-- press-css: ", " -->",
-                PluginConfig.css.srcDir, PluginConfig.css.compressedDir);
+        super(FILE_TYPE, EXTENSION, TAG_NAME, "#{press.compressed-stylesheet}", "<!-- press-css: ",
+                " -->", PluginConfig.css.srcDir, PluginConfig.css.compressedDir);
     }
 
     public String compressedSingleFileUrl(String fileName) {
         return compressedSingleFileUrl(cssFileCompressor, fileName);
     }
 
-    public static VirtualFile getCompressedFile(String key) {
+    public static CompressedFile getCompressedFile(String key) {
         return getCompressedFile(cssFileCompressor, key, PluginConfig.css.compressedDir, EXTENSION);
     }
 
     public static VirtualFile checkCSSFileExists(String fileName) {
-        return checkFileExists(fileName, PluginConfig.css.srcDir);
+        return FileIO.checkFileExists(fileName, PluginConfig.css.srcDir);
     }
-    
-    public static List<File> clearCache() {
+
+    public static int clearCache() {
         return clearCache(PluginConfig.css.compressedDir, EXTENSION);
     }
 

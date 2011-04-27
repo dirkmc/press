@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import play.PlayPlugin;
+import play.mvc.Router;
+import press.io.FileIO;
+import press.io.PressFileGlobber;
 
 public class Plugin extends PlayPlugin {
     static ThreadLocal<JSCompressor> jsCompressor = new ThreadLocal<JSCompressor>();
@@ -41,7 +44,12 @@ public class Plugin extends PlayPlugin {
         JSCompressor compressor = jsCompressor.get();
         String src = null;
         if (performCompression()) {
-            src = compressor.compressedSingleFileUrl(fileName);
+            String requestKey = compressor.compressedSingleFileUrl(fileName);
+            if (PluginConfig.isInMemoryStorage()) {
+                src = getSingleCompressedJSUrl(requestKey);
+            } else {
+                src = requestKey;
+            }
         } else {
             src = compressor.srcDir + fileName;
         }
@@ -57,7 +65,12 @@ public class Plugin extends PlayPlugin {
         CSSCompressor compressor = cssCompressor.get();
         String src = null;
         if (performCompression()) {
-            src = compressor.compressedSingleFileUrl(fileName);
+            String requestKey = compressor.compressedSingleFileUrl(fileName);
+            if (PluginConfig.isInMemoryStorage()) {
+                src = getSingleCompressedCSSUrl(requestKey);
+            } else {
+                src = requestKey;
+            }
         } else {
             src = compressor.srcDir + fileName;
         }
@@ -112,7 +125,8 @@ public class Plugin extends PlayPlugin {
      */
     public static String compressedCSSTag() {
         if (performCompression()) {
-            return getLinkTag(cssCompressor.get().compressedUrl());
+            String requestKey = cssCompressor.get().closeRequest();
+            return getLinkTag(getCompressedCSSUrl(requestKey));
         }
         return "";
     }
@@ -121,8 +135,9 @@ public class Plugin extends PlayPlugin {
      * Outputs the tag indicating where the compressed CSS should be included.
      */
     public static String compressedJSTag() {
+        String requestKey = jsCompressor.get().closeRequest();
         if (performCompression()) {
-            return getScriptTag(jsCompressor.get().compressedUrl());
+            return getScriptTag(getCompressedJSUrl(requestKey));
         }
         return "";
     }
@@ -196,6 +211,28 @@ public class Plugin extends PlayPlugin {
         }
 
         throw new DuplicateFileException(fileType, fileName, tagName);
+    }
+
+    private static String getSingleCompressedCSSUrl(String requestKey) {
+        return getCompressedUrl("press.Press.getSingleCompressedCSS", requestKey);
+    }
+
+    private static String getSingleCompressedJSUrl(String requestKey) {
+        return getCompressedUrl("press.Press.getSingleCompressedJS", requestKey);
+    }
+
+    private static String getCompressedCSSUrl(String requestKey) {
+        return getCompressedUrl("press.Press.getCompressedCSS", requestKey);
+    }
+
+    private static String getCompressedJSUrl(String requestKey) {
+        return getCompressedUrl("press.Press.getCompressedJS", requestKey);
+    }
+
+    private static String getCompressedUrl(String action, String requestKey) {
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("key", FileIO.escape(requestKey));
+        return Router.reverse(action, params).url;
     }
 
     /**

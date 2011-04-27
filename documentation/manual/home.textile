@@ -123,6 +123,11 @@ press uses different caching mechanisms depending on whether Play is in dev or p
 * There is a third caching strategy that can be configured called **Never**, in which __press__ will not use the cache. Compression will be performed for every page request. This mode obviously puts a high load on the server and is only recommended if one of the above strategies cannot be used for some reason.
 
 
+h2. <a name="inmem">In-Memory storage</a>
+
+To improve performance, or to use __press__ on systems such as Google App Engine that do not support writes to the file system, __press__ can be configured to store all compressed files in memory using Play's standard caching mechanism, instead of on . See "Configuration":#configuration below.
+
+
 h2. <a name="configuration">Configuration</a>
 
 Many configuration options are different between dev and production. All of them can be overridden. For more information on how to override a Play configuration option for a particular environment, see "Managing application.conf in several environments":http://www.playframework.org/documentation/1.0.3/ids
@@ -165,6 +170,14 @@ Press exposes an action to clear the compressed js and css cache at /press/clear
 
 By default, when play is in dev mode the action is available and in production it is disabled.
 **press.cache.clearEnabled=true**
+
+
+h3. __press.inMemoryStorage__
+
+Indicates whether to store compressed files in memory or in the file system. See "In-Memory Storage":#inmem.
+
+By default files are stored on the file system
+**press.inMemoryStorage=false**
 
 
 h3. __press.key.lifetime__

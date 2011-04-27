@@ -1,35 +1,50 @@
 package controllers.press;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.List;
 
 import play.exceptions.UnexpectedException;
 import play.mvc.Controller;
-import play.vfs.VirtualFile;
 import press.CSSCompressor;
 import press.JSCompressor;
 import press.PluginConfig;
+import press.io.CompressedFile;
+import press.io.FileIO;
 
 public class Press extends Controller {
 
     public static void getCompressedJS(String key) {
-        VirtualFile compressedFile = JSCompressor.getCompressedFile(key);
-        if (compressedFile == null) {
-            renderBadResponse("JavaScript");
-        }
-
-        renderBinary(compressedFile.getRealFile());
+        key = FileIO.unescape(key);
+        CompressedFile compressedFile = JSCompressor.getCompressedFile(key);
+        renderCompressedFile(compressedFile, "JavaScript");
     }
 
     public static void getCompressedCSS(String key) {
-        VirtualFile compressedFile = CSSCompressor.getCompressedFile(key);
+        key = FileIO.unescape(key);
+        CompressedFile compressedFile = CSSCompressor.getCompressedFile(key);
+        renderCompressedFile(compressedFile, "CSS");
+    }
+
+    public static void getSingleCompressedJS(String key) {
+        key = FileIO.unescape(key);
+        CompressedFile compressedFile = JSCompressor.getSingleCompressedFile(key);
+        renderCompressedFile(compressedFile, "JavaScript");
+    }
+
+    public static void getSingleCompressedCSS(String key) {
+        key = FileIO.unescape(key);
+        CompressedFile compressedFile = CSSCompressor.getSingleCompressedFile(key);
+        renderCompressedFile(compressedFile, "CSS");
+    }
+
+    private static void renderCompressedFile(CompressedFile compressedFile, String type) {
         if (compressedFile == null) {
-            renderBadResponse("CSS");
+            renderBadResponse(type);
         }
 
-        renderBinary(compressedFile.getRealFile());
+        InputStream inputStream = compressedFile.inputStream();
+        renderBinary(inputStream, compressedFile.name(), compressedFile.length());
     }
 
     public static void clearJSCache() {
@@ -37,8 +52,8 @@ public class Press extends Controller {
             forbidden();
         }
 
-        List<File> files = JSCompressor.clearCache();
-        renderText("Cleared " + files.size() + " files from cache");
+        int count = JSCompressor.clearCache();
+        renderText("Cleared " + count + " JS files from cache");
     }
 
     public static void clearCSSCache() {
@@ -46,8 +61,8 @@ public class Press extends Controller {
             forbidden();
         }
 
-        List<File> files = CSSCompressor.clearCache();
-        renderText("Cleared " + files.size() + " files from cache");
+        int count = CSSCompressor.clearCache();
+        renderText("Cleared " + count + " CSS files from cache");
     }
 
     private static void renderBadResponse(String fileType) {

@@ -1,16 +1,16 @@
 package press;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.List;
 
 import org.mozilla.javascript.ErrorReporter;
 import org.mozilla.javascript.EvaluatorException;
 
 import play.Logger;
 import play.vfs.VirtualFile;
+import press.io.CompressedFile;
+import press.io.FileIO;
 
 import com.yahoo.platform.yui.compressor.JavaScriptCompressor;
 
@@ -20,24 +20,23 @@ public class JSCompressor extends Compressor {
     public static final String EXTENSION = ".js";
 
     public JSCompressor() {
-        super(FILE_TYPE, EXTENSION, "press.Press.getCompressedJS", TAG_NAME,
-                "#{press.compressed-script}", "<!-- press-js: ", " -->", PluginConfig.js.srcDir,
-                PluginConfig.js.compressedDir);
+        super(FILE_TYPE, EXTENSION, TAG_NAME, "#{press.compressed-script}", "<!-- press-js: ",
+                " -->", PluginConfig.js.srcDir, PluginConfig.js.compressedDir);
     }
 
     public String compressedSingleFileUrl(String fileName) {
         return compressedSingleFileUrl(jsFileCompressor, fileName);
     }
 
-    public static VirtualFile getCompressedFile(String key) {
+    public static CompressedFile getCompressedFile(String key) {
         return getCompressedFile(jsFileCompressor, key, PluginConfig.js.compressedDir, EXTENSION);
     }
-
-    public static VirtualFile checkJSFileExists(String fileName) {
-        return checkFileExists(fileName, PluginConfig.js.srcDir);
-    }
     
-    public static List<File> clearCache() {
+    public static VirtualFile checkJSFileExists(String fileName) {
+        return FileIO.checkFileExists(fileName, PluginConfig.js.srcDir);
+    }
+
+    public static int clearCache() {
         return clearCache(PluginConfig.js.compressedDir, EXTENSION);
     }
 

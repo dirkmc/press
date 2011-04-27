@@ -19,6 +19,9 @@ public class PluginConfig {
         // Default is to be available in dev only
         public static final boolean cacheClearEnabled = (Play.mode == Mode.DEV);
 
+        // Whether to use the file system or memory to store compressed files
+        public static final boolean inMemoryStorage = false;
+
         // The amount of time that a compression key is stored for.
         // This only needs to be as long as the time between when the action
         // finishes and the browser requests the compressed javascript (usually
@@ -64,6 +67,7 @@ public class PluginConfig {
     public static boolean enabled;
     public static CachingStrategy cache;
     public static boolean cacheClearEnabled;
+    public static boolean inMemoryStorage;
     public static String compressionKeyStorageTime;
     public static int maxCompressionTimeMillis;
     public static boolean htmlCompatible;
@@ -86,6 +90,11 @@ public class PluginConfig {
         public static int lineBreak = DefaultConfig.css.lineBreak;
     }
 
+    // Required to make the class loader happy
+    public static boolean isInMemoryStorage() {
+        return inMemoryStorage;
+    }
+
     /**
      * Reads from the config file into memory. If the config file doesn't exist
      * or is deleted, uses the default values.
@@ -94,11 +103,12 @@ public class PluginConfig {
         PressLogger.trace("Loading Press plugin configuration");
 
         // press options
+        enabled = ConfigHelper.getBoolean("press.enabled", DefaultConfig.enabled);
         String cacheDefault = DefaultConfig.cache.toString();
         cache = CachingStrategy.parse(ConfigHelper.getString("press.cache", cacheDefault));
         cacheClearEnabled = ConfigHelper.getBoolean("press.cache.clearEnabled",
                 DefaultConfig.cacheClearEnabled);
-        enabled = ConfigHelper.getBoolean("press.enabled", DefaultConfig.enabled);
+        inMemoryStorage = ConfigHelper.getBoolean("press.inMemoryStorage", DefaultConfig.inMemoryStorage);
         compressionKeyStorageTime = ConfigHelper.getString("press.key.lifetime",
                 DefaultConfig.compressionKeyStorageTime);
         maxCompressionTimeMillis = ConfigHelper.getInt("press.compression.maxTimeMillis",
@@ -138,6 +148,7 @@ public class PluginConfig {
         PressLogger.trace("enabled: %b", enabled);
         PressLogger.trace("caching strategy: %s", cache);
         PressLogger.trace("cache publicly clearable: %s", cacheClearEnabled);
+        PressLogger.trace("in memory storage: %s", inMemoryStorage);
         PressLogger.trace("compression key storage time: %s", compressionKeyStorageTime);
         PressLogger.trace("HTML compatible: %b", htmlCompatible);
         PressLogger.trace("css source directory: %s", css.srcDir);

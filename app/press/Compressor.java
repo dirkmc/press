@@ -1,12 +1,9 @@
 package press;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileFilter;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
@@ -18,17 +15,16 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import play.Play;
 import play.PlayPlugin;
 import play.cache.Cache;
 import play.exceptions.UnexpectedException;
 import play.libs.Crypto;
-import play.mvc.Router;
 import play.mvc.Http.Request;
 import play.mvc.Http.Response;
-import play.mvc.Router.ActionDefinition;
 import play.templates.JavaExtensions;
 import play.vfs.VirtualFile;
+import press.io.CompressedFile;
+import press.io.FileIO;
 
 public abstract class Compressor extends PlayPlugin {
     static final String PRESS_SIGNATURE = "press-1.0";
@@ -40,9 +36,6 @@ public abstract class Compressor extends PlayPlugin {
 
     // File extension, eg ".js"
     String extension;
-
-    // Play Action to get the compressed file, eg "Press.getCompressedJS"
-    String getCompressedFileAction;
 
     // Tag name, eg "#{press.script}"
     String tagName;
@@ -76,22 +69,57 @@ public abstract class Compressor extends PlayPlugin {
         public void compress(String fileName, Reader in, Writer out) throws Exception;
     }
 
-    public Compressor(String fileType, String extension, String getCompressedFileAction,
-            String tagName, String compressedTagName, String pressRequestStart,
-            String pressRequestEnd, String srcDir, String compressedDir) {
+    public Compressor(String fileType, String extension, String tagName, String compressedTagName,
+            String pressRequestStart, String pressRequestEnd, String srcDir, String compressedDir) {
 
         this.fileInfos = new HashMap<String, List<FileInfo>>();
         this.currentResponse = Response.current();
 
         this.fileType = fileType;
         this.extension = extension;
-        this.getCompressedFileAction = getCompressedFileAction;
         this.pressRequestStart = pressRequestStart;
         this.pressRequestEnd = pressRequestEnd;
         this.tagName = tagName;
         this.compressedTagName = compressedTagName;
         this.srcDir = PluginConfig.addTrailingSlash(srcDir);
         this.compressedDir = PluginConfig.addTrailingSlash(compressedDir);
+    }
+
+    /**
+     * Called when compressing a single file (as opposed to a group of files).
+     * Compresses the file on the fly, and returns the url to it. The file will
+     * have the same name as the original file with .min appended before the
+     * extension. eg the compressed output of widget.js will be in widget.min.js
+     */
+    public String compressedSingleFileUrl(FileCompressor compressor, String fileName) {
+        PressLogger.trace("Request to compress single file %s", fileName);
+
+        int lastDot = fileName.lastIndexOf('.');
+        String compressedFileName = fileName.substring(0, lastDot) + ".min";
+        compressedFileName += fileName.substring(lastDot);
+
+        // The process for compressing a single file is the same as for a group
+        // of files, the list just has a single entry
+        VirtualFile srcFile = checkFileExists(fileName);
+        List<FileInfo> componentFiles = new ArrayList<FileInfo>(1);
+        componentFiles.add(new FileInfo(compressedFileName, true, srcFile));
+
+        // Check whether the compressed file needs to be generated
+        String outputFilePath = compressedDir + compressedFileName;
+        CompressedFile outputFile = CompressedFile.create(outputFilePath);
+        if (outputFile.exists() && useCache(componentFiles, outputFile, extension)) {
+            // If not, return the existing file
+            PressLogger.trace("File has already been compressed");
+        } else {
+            // If so, generate it
+            writeCompressedFile(compressor, componentFiles, outputFile);
+        }
+
+        return outputFilePath;
+    }
+    
+    public static CompressedFile getSingleCompressedFile(String requestKey) {
+        return CompressedFile.create(requestKey);
     }
 
     /**
@@ -125,53 +153,36 @@ public abstract class Compressor extends PlayPlugin {
     }
 
     /**
-     * Called when compressing a single file (as opposed to a group of files).
-     * Compresses the file on the fly, and returns the url to it. The file will
-     * have the same name as the original file with .min appended before the
-     * extension. eg the compressed output of widget.js will be in widget.min.js
+     * This must only be called once, as it indicates that the file is ready to
+     * be output
+     * 
+     * @return the request key used to retrieve the compressed file
      */
-    public String compressedSingleFileUrl(FileCompressor compressor, String fileName) {
-        PressLogger.trace("Request to compress single file %s", fileName);
-
-        int lastDot = fileName.lastIndexOf('.');
-        String compressedFileName = fileName.substring(0, lastDot) + ".min";
-        compressedFileName += fileName.substring(lastDot);
-
-        // The process for compressing a single file is the same as for a group
-        // of files, the list just has a single entry
-        VirtualFile srcFile = checkFileExists(fileName);
-        List<FileInfo> componentFiles = new ArrayList<FileInfo>(1);
-        componentFiles.add(new FileInfo(compressedFileName, true, srcFile));
-
-        // Check whether the compressed file needs to be generated
-        String outputFilePath = compressedDir + compressedFileName;
-        VirtualFile outputFile = getVirtualFile(outputFilePath);
-        if (useCache(componentFiles, outputFile, extension) && outputFile.exists()) {
-            PressLogger.trace("File has already been compressed");
-        } else {
-            // If so, generate it
-            writeCompressedFile(compressor, componentFiles, outputFile, null);
-        }
-
-        return outputFilePath;
-    }
-
-    public String compressedUrl() {
+    public String closeRequest() {
         if (requestKey != null) {
             String msg = "There is more than one " + compressedTagName
                     + " tag in the template output. " + "There must be one only.";
             throw new PressException(msg);
         }
-
         requestKey = getRequestKey() + extension;
-        Map<String, Object> params = new HashMap<String, Object>();
-        params.put("key", requestKey);
-        ActionDefinition route = Router.reverse(getCompressedFileAction, params);
 
         int numFiles = getTotalFileCount();
         PressLogger.trace("Adding key %s for compression of %d files", requestKey, numFiles);
 
-        return route.url;
+        return requestKey;
+    }
+
+    /**
+     * The request key is just the url - for the same url we should always
+     * return the same compressed javascript or css.
+     */
+    private String getRequestKey() {
+        String key = Request.current().path + Request.current().querystring + extension;
+
+        // Get a hash of the url to keep it short
+        String hashed = Crypto.passwordHash(key);
+
+        return FileIO.lettersOnly(hashed);
     }
 
     public void saveFileList() {
@@ -248,7 +259,7 @@ public abstract class Compressor extends PlayPlugin {
     public void addFileListToCache(String cacheKey, List<FileInfo> originalList) {
         List<FileInfo> newList = new ArrayList<FileInfo>();
         for (FileInfo fileInfo : originalList) {
-            VirtualFile file = getVirtualFile(srcDir + fileInfo.fileName);
+            VirtualFile file = FileIO.getVirtualFile(srcDir + fileInfo.fileName);
 
             // Check the file exists
             if (!file.exists()) {
@@ -262,25 +273,13 @@ public abstract class Compressor extends PlayPlugin {
 
         // Add a mapping between the request key and the list of files that
         // are compressed for the request
-        Cache.set(cacheKey, newList, PluginConfig.compressionKeyStorageTime);
-    }
-
-    /**
-     * The request key is just the url - for the same url we should always
-     * return the same compressed javascript or css.
-     */
-    private String getRequestKey() {
-        String key = Request.current().path + Request.current().querystring + extension;
-
-        // Get a hash of the url to keep it short
-        String hashed = Crypto.passwordHash(key);
-
-        return lettersOnly(hashed);
+        Cache.safeSet(cacheKey, newList, PluginConfig.compressionKeyStorageTime);
     }
 
     @SuppressWarnings("unchecked")
-    protected static VirtualFile getCompressedFile(FileCompressor compressor, String key,
+    protected static CompressedFile getCompressedFile(FileCompressor compressor, String key,
             String compressedDir, String extension) {
+        
         List<FileInfo> componentFiles = (List<FileInfo>) Cache.get(key);
 
         // If there was nothing found for the given request key, return null.
@@ -293,178 +292,71 @@ public abstract class Compressor extends PlayPlugin {
         return getCompressedFile(compressor, componentFiles, compressedDir, extension);
     }
 
-    protected static VirtualFile getCompressedFile(FileCompressor compressor,
+    protected static CompressedFile getCompressedFile(FileCompressor compressor,
             List<FileInfo> componentFiles, String compressedDir, String extension) {
         String joinedFileNames = JavaExtensions.join(FileInfo.getFileNames(componentFiles), "");
         String fileName = Crypto.passwordHash(joinedFileNames);
-        fileName = lettersOnly(fileName);
+        fileName = FileIO.lettersOnly(fileName);
         String filePath = compressedDir + fileName + extension;
-        VirtualFile file = getVirtualFile(filePath);
+        CompressedFile file = null;
+        file = CompressedFile.create(filePath);
 
         // If the file already exists in the cache, return it
-        if (useCache(componentFiles, file, extension)) {
-            String absolutePath = file.getRealFile().getAbsolutePath();
-            if (file.exists()) {
-                PressLogger.trace("Using existing compressed file %s", absolutePath);
-                return file;
-            } else {
-                PressLogger.trace("Compressed file %s does not yet exist", absolutePath);
-            }
+        boolean exists = file.exists();
+        if (exists && useCache(componentFiles, file, extension)) {
+            PressLogger.trace("Using existing compressed file %s", filePath);
+            return file;
         }
 
-        PressLogger.trace("Generating compressed file %s from %d component files", file.getName(),
+        if (!exists) {
+            PressLogger.trace("Compressed file %s does not yet exist", filePath);
+        }
+        PressLogger.trace("Generating compressed file %s from %d component files", filePath,
                 componentFiles.size());
 
-        //
-        // We create a temp file to which the output will be written to first,
-        // and then rename it to the target file name (because compression can
-        // take a while)
-        // If the temp file is already being written by another thread, this
-        // method will block until it is complete and then return null
-        //
-        File tmp = getTmpOutputFile(file);
-        if (tmp == null) {
-            PressLogger.trace("Compressed file was generated by another thread");
-        } else {
-            writeCompressedFile(compressor, componentFiles, file, tmp);
-        }
-
+        writeCompressedFile(compressor, componentFiles, file);
         return file;
     }
 
     private static void writeCompressedFile(FileCompressor compressor,
-            List<FileInfo> componentFiles, VirtualFile file, File tmp) {
+            List<FileInfo> componentFiles, CompressedFile file) {
 
-        // Create the directory if it doesn't already exist
-        VirtualFile dir = VirtualFile.open(file.getRealFile().getParent());
-        if (!dir.exists()) {
-            if (!dir.getRealFile().mkdirs()) {
-                throw new PressException("Could not create directory for compressed file output "
-                        + file.getRealFile().getAbsolutePath());
-            }
+        long timeStart = System.currentTimeMillis();
+
+        // If the file is being written by another thread, startWrite() will
+        // block until it is complete and then return null
+        Writer writer = file.startWrite();
+        if (writer == null) {
+            PressLogger.trace("Compressed file was generated by another thread");
+            return;
         }
 
-        Writer out = null;
         try {
-            // If there is a temp file specified, we write to that first
-            // and then move it to the final destination file
-            File destFile = tmp != null ? tmp : file.getRealFile();
-
-            // Compress the component files and write the output to the
-            // file
-            out = new BufferedWriter(new FileWriter(destFile));
-
-            // Add the last modified dates of each component file to the start
-            // of the compressed file so that we can later check if any of them
-            // have changed.
+            // Add the last modified dates of each component file to the
+            // start of the compressed file so that we can later check if
+            // any of them have changed.
             String lastModifiedDates = createFileHeader(componentFiles);
-            out.append(lastModifiedDates);
+            writer.append(lastModifiedDates);
 
-            long timeStart = System.currentTimeMillis();
             for (FileInfo componentFile : componentFiles) {
-                compress(compressor, componentFile, out);
+                compress(compressor, componentFile, writer);
             }
-            out.flush();
-            out.close();
+
             long timeAfter = System.currentTimeMillis();
-            PressLogger.trace("Time to compress files for '%s': %d milli-seconds", file
-                    .getRealFile().getName(), (timeAfter - timeStart));
-
-            // If the output was written to a temporary file, rename it to
-            // overwrite the true destination file.
-            if (tmp != null) {
-                String msg = "Output written to temporary file\n%s\n";
-                msg += "Moving from tmp path to final path:\n%s";
-                String tmpPath = tmp.getAbsolutePath();
-                String finalPath = file.getRealFile().getAbsolutePath();
-                PressLogger.trace(msg, tmpPath, finalPath);
-                if (!tmp.renameTo(file.getRealFile())) {
-                    String ex = "Successfully wrote compressed file to temporary path\n" + tmpPath;
-                    ex += "\nBut could not move it to final path\n" + finalPath;
-                    throw new PressException(ex);
-                }
-            }
-
-            PressLogger.trace("Compressed file generation complete:");
-            PressLogger.trace(file.relativePath());
-
+            PressLogger.trace("Time to compress files for '%s': %d milli-seconds", FileIO
+                    .getFileNameFromPath(file.name()), (timeAfter - timeStart));
         } catch (Exception e) {
             throw new UnexpectedException(e);
         } finally {
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    throw new UnexpectedException(e);
-                }
-            }
+            file.close();
         }
     }
 
-    private static File getTmpOutputFile(VirtualFile file) {
-        String origPath = file.getRealFile().getAbsolutePath();
-        File tmp = new File(origPath + ".tmp");
-
-        // If the temp file already exists
-        if (tmp.exists()) {
-            long tmpLastModified = tmp.lastModified();
-            long now = System.currentTimeMillis();
-
-            // If the temp file is older than the destination file, or if it is
-            // older than the allowed compression time, it must be a remnant of
-            // a previous server crash so we can overwrite it
-            if (tmpLastModified < file.lastModified()) {
-                return tmp;
-            }
-            if (now - tmpLastModified > PluginConfig.maxCompressionTimeMillis) {
-                return tmp;
-            }
-
-            // Otherwise it must be currently being written by another thread,
-            // so wait for it to finish
-            while (tmp.exists()) {
-                if (System.currentTimeMillis() - now > PluginConfig.maxCompressionTimeMillis) {
-                    throw new PressException("Timeout waiting for compressed file to be generated");
-                }
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                }
-            }
-
-            // Return null to indicate that the file was already generated by
-            // another thread
-            return null;
-        }
-
-        return tmp;
+    public static int clearCache(String compressedDir, String extension) {
+        return CompressedFile.clearCache(compressedDir, extension);
     }
 
-    public static List<File> clearCache(String compressedDir, String extension) {
-        PressLogger.trace("Deleting cached files");
-
-        // Get the cache directory
-        VirtualFile dir = getVirtualFile(compressedDir);
-        if (!dir.exists() || !dir.isDirectory()) {
-            return new ArrayList<File>();
-        }
-
-        // Get a list of all compressed files, and delete them
-        FileFilter compressedFileFilter = new PressFileFilter(extension);
-        File[] files = dir.getRealFile().listFiles(compressedFileFilter);
-        List<File> deleted = new ArrayList<File>(files.length);
-        for (File file : files) {
-            if (file.delete()) {
-                deleted.add(file);
-            }
-        }
-
-        PressLogger.trace("Deleted %d cached files", deleted.size());
-        return deleted;
-    }
-
-    private static boolean useCache(List<FileInfo> componentFiles, VirtualFile file,
+    private static boolean useCache(List<FileInfo> componentFiles, CompressedFile file,
             String extension) {
         PressLogger.trace("Caching strategy is %s", PluginConfig.cache);
         if (PluginConfig.cache.equals(CachingStrategy.Never)) {
@@ -485,7 +377,8 @@ public abstract class Compressor extends PlayPlugin {
         return !changed;
     }
 
-    private static boolean haveComponentFilesChanged(List<FileInfo> componentFiles, VirtualFile file) {
+    private static boolean haveComponentFilesChanged(List<FileInfo> componentFiles,
+            CompressedFile file) {
 
         // Check if the file exists
         if (!file.exists()) {
@@ -493,7 +386,7 @@ public abstract class Compressor extends PlayPlugin {
         }
 
         // Check if the file has a compression header
-        String header = extractHeaderContent(file.getRealFile());
+        String header = extractHeaderContent(file);
         if (header == null) {
             return true;
         }
@@ -562,9 +455,13 @@ public abstract class Compressor extends PlayPlugin {
         return "/*" + PRESS_SIGNATURE + "|" + JavaExtensions.join(timestamps, ":") + "*/\n";
     }
 
-    public static String extractHeaderContent(File file) {
+    public static String extractHeaderContent(CompressedFile file) {
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
+            if (!file.exists()) {
+                return null;
+
+            }
+            BufferedReader reader = new BufferedReader(new InputStreamReader(file.inputStream()));
             String firstLine = reader.readLine();
             Matcher matcher = HEADER_PATTERN.matcher(firstLine);
             if (matcher.matches()) {
@@ -590,31 +487,9 @@ public abstract class Compressor extends PlayPlugin {
         } else {
             // Otherwise just copy it
             PressLogger.trace("Adding already compressed file %s", fileName);
-            write(in, out);
+            FileIO.write(in, out);
             compressor.compress(fileName, in, out);
         }
-    }
-
-    public static void write(Reader reader, Writer writer) throws IOException {
-        int read = 0;
-        char[] buffer = new char[8096];
-        while ((read = reader.read(buffer)) > 0) {
-            writer.write(buffer, 0, read);
-        }
-    }
-
-    /**
-     * Converts any non-letter characters in the given string to letters
-     */
-    private static String lettersOnly(String hashed) {
-        char[] chars = hashed.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            if (!Character.isLetter(chars[i])) {
-                chars[i] = (char) ((int) 'A' + (int) chars[i] % 26);
-            }
-        }
-
-        return new String(chars);
     }
 
     /**
@@ -682,35 +557,7 @@ public abstract class Compressor extends PlayPlugin {
      * source directory, throws an exception.
      */
     public VirtualFile checkFileExists(String fileName) {
-        return checkFileExists(fileName, srcDir);
-    }
-
-    /**
-     * Gets the file with the given name. If the file does not exist in the
-     * source directory, throws an exception.
-     */
-    public static VirtualFile checkFileExists(String fileName, String sourceDirectory) {
-        VirtualFile srcFile = getVirtualFile(sourceDirectory + fileName);
-
-        // Check the file exists
-        if (!srcFile.exists()) {
-            String msg = "Attempt to add file '" + srcFile.getRealFile().getAbsolutePath() + "' ";
-            msg += "to compression but file does not exist.";
-            throw new PressException(msg);
-        }
-        return srcFile;
-    }
-
-    /**
-     * Gets the file at the given path, relative to the application root, even
-     * if the file doesn't exist
-     */
-    private static VirtualFile getVirtualFile(String filePath) {
-        VirtualFile vf = Play.getVirtualFile(filePath);
-        if (vf == null) {
-            return VirtualFile.open(Play.getFile(filePath));
-        }
-        return vf;
+        return FileIO.checkFileExists(fileName, srcDir);
     }
 
     protected static class FileInfo {

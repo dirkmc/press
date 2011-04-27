@@ -1,4 +1,4 @@
-package press;
+package press.io;
 
 import java.io.File;
 import java.text.Collator;
