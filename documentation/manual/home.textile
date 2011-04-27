@@ -125,7 +125,7 @@ press uses different caching mechanisms depending on whether Play is in dev or p
 
 h2. <a name="inmem">In-Memory storage</a>
 
-To improve performance, or to use __press__ on systems such as Google App Engine that do not support writes to the file system, __press__ can be configured to store all compressed files in memory using Play's standard caching mechanism, instead of on . See "Configuration":#configuration below.
+To improve performance, or to use __press__ on systems such as Google App Engine that do not support writes to the file system, __press__ can be configured to store all compressed files in memory using Play's standard caching mechanism, instead of on the file system. See "Configuration":#configuration below.
 
 
 h2. <a name="configuration">Configuration</a>
