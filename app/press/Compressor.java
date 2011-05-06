@@ -265,7 +265,7 @@ public abstract class Compressor extends PlayPlugin {
 
             // Check the file exists
             if (!file.exists()) {
-                String msg = "Attempt to add file '" + file.getAbsolutePath() + "' ";
+                String msg = "Attempt to add file '" + file.getRealFile().getAbsolutePath() + "' ";
                 msg += "to compression with " + tagName + " tag but file does not exist.";
                 throw new PressException(msg);
             }
@@ -449,7 +449,7 @@ public abstract class Compressor extends PlayPlugin {
 
         for (int i = 0; i < componentFiles.size(); i++) {
             FileInfo fileInfo = componentFiles.get(i);
-            String lastMod = fileInfo.file.lastModified().toString();
+            String lastMod = Long.toString(fileInfo.file.lastModified());
             char compress = fileInfo.compress ? 'c' : 'u';
             timestamps.add(compress + lastMod);
         }
