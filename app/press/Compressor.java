@@ -1,10 +1,12 @@
 package press;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -263,7 +265,7 @@ public abstract class Compressor extends PlayPlugin {
 
             // Check the file exists
             if (!file.exists()) {
-                String msg = "Attempt to add file '" + file.getRealFile().getAbsolutePath() + "' ";
+                String msg = "Attempt to add file '" + file.getAbsolutePath() + "' ";
                 msg += "to compression with " + tagName + " tag but file does not exist.";
                 throw new PressException(msg);
             }
@@ -477,7 +479,7 @@ public abstract class Compressor extends PlayPlugin {
     private static void compress(FileCompressor compressor, FileInfo fileInfo, Writer out)
             throws Exception {
         String fileName = fileInfo.file.getName();
-        BufferedReader in = new BufferedReader(new FileReader(fileInfo.file.getRealFile()));
+        BufferedReader in = new BufferedReader(new FileReader(fileInfo.file));
 
         // If the file should be compressed
         if (fileInfo.compress) {
@@ -560,15 +562,15 @@ public abstract class Compressor extends PlayPlugin {
         return FileIO.checkFileExists(fileName, srcDir);
     }
 
-    protected static class FileInfo {
+    protected static class FileInfo implements Serializable {
         String fileName;
         boolean compress;
-        private VirtualFile file;
+        private File file;
 
         public FileInfo(String fileName, boolean compress, VirtualFile file) {
             this.fileName = fileName;
             this.compress = compress;
-            this.file = file;
+            this.file = file == null ? null:file.getRealFile();
         }
 
         public static Collection<String> getFileNames(List<FileInfo> list) {
