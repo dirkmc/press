@@ -119,7 +119,7 @@ public abstract class Compressor extends PlayPlugin {
 
         return outputFilePath;
     }
-    
+
     public static CompressedFile getSingleCompressedFile(String requestKey) {
         return CompressedFile.create(requestKey);
     }
@@ -175,15 +175,17 @@ public abstract class Compressor extends PlayPlugin {
     }
 
     /**
-     * The request key is just the url - for the same url we should always
-     * return the same compressed javascript or css.
+     * The request key is is derived from the list of files - for the same list
+     * of files we should always return the same compressed javascript or css.
      */
     private String getRequestKey() {
-        String key = Request.current().path + Request.current().querystring + extension;
+        String key = "";
+        for (String fileName : fileInfos.keySet()) {
+            key += fileName + fileInfos.get(fileName).size();
+        }
 
         // Get a hash of the url to keep it short
         String hashed = Crypto.passwordHash(key);
-
         return FileIO.lettersOnly(hashed);
     }
 
@@ -281,7 +283,7 @@ public abstract class Compressor extends PlayPlugin {
     @SuppressWarnings("unchecked")
     protected static CompressedFile getCompressedFile(FileCompressor compressor, String key,
             String compressedDir, String extension) {
-        
+
         List<FileInfo> componentFiles = (List<FileInfo>) Cache.get(key);
 
         // If there was nothing found for the given request key, return null.
@@ -570,7 +572,7 @@ public abstract class Compressor extends PlayPlugin {
         public FileInfo(String fileName, boolean compress, VirtualFile file) {
             this.fileName = fileName;
             this.compress = compress;
-            this.file = file == null ? null:file.getRealFile();
+            this.file = file == null ? null : file.getRealFile();
         }
 
         public static Collection<String> getFileNames(List<FileInfo> list) {

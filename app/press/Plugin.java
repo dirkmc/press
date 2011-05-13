@@ -135,8 +135,8 @@ public class Plugin extends PlayPlugin {
      * Outputs the tag indicating where the compressed CSS should be included.
      */
     public static String compressedJSTag() {
-        String requestKey = jsCompressor.get().closeRequest();
         if (performCompression()) {
+            String requestKey = jsCompressor.get().closeRequest();
             return getScriptTag(getCompressedJSUrl(requestKey));
         }
         return "";
@@ -146,7 +146,7 @@ public class Plugin extends PlayPlugin {
     public void afterActionInvocation() {
         // At the end of the action, save the list of files that will be
         // associated with this request
-        if (jsCompressor.get() != null && cssCompressor.get() != null && !hasErrorOccurred()) {
+        if (jsCompressor.get() != null && cssCompressor.get() != null && performCompression()) {
             jsCompressor.get().saveFileList();
             cssCompressor.get().saveFileList();
         }

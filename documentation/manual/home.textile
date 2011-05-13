@@ -272,7 +272,8 @@ The following people have contributed to the development of this plugin:
 * orefalo
 * nzakas
 * Jarno Rantanen
-* judu 
+* judu
+* Juergen Stumpp
 
 Thanks!
 
