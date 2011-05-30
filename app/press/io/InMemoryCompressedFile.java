@@ -76,7 +76,11 @@ public class InMemoryCompressedFile extends CompressedFile {
 
         if (writer == null) {
             outputStream = new ByteArrayOutputStream();
-            writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+            try {
+                writer = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                throw new UnexpectedException(e);
+            }
         }
 
         return writer;
@@ -98,7 +102,7 @@ public class InMemoryCompressedFile extends CompressedFile {
         byte[] outBytes = outputStream.toByteArray();
         PressLogger.trace("Saving file of size %d bytes to cache.", outBytes.length);
         addFileToCache(getFilePath(), outBytes);
-        
+
         String inProgressKey = getInProgressKey(getFilePath());
         Cache.safeDelete(inProgressKey);
     }
@@ -128,10 +132,10 @@ public class InMemoryCompressedFile extends CompressedFile {
                     "Underlying cache implementation could not store compressed file " + filePath
                             + " in cache");
         }
-        
+
         inputStream = null;
         bytes = null;
-        
+
         long totalTime = System.currentTimeMillis() - startTime;
         PressLogger.trace("Saved file to cache in %d milli-seconds", totalTime);
     }

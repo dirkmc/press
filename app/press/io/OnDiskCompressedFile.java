@@ -3,9 +3,10 @@ package press.io;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 
 import play.exceptions.UnexpectedException;
@@ -73,7 +74,8 @@ public class OnDiskCompressedFile extends CompressedFile {
             }
 
             // Return a writer for the temporary file
-            writer = new BufferedWriter(new FileWriter(tmpOutputFile));
+            writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmpOutputFile),
+                    "UTF-8"));
             return writer;
         } catch (IOException e) {
             throw new UnexpectedException(e);

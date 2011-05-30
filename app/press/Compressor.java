@@ -2,7 +2,7 @@ package press;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -480,8 +480,10 @@ public abstract class Compressor extends PlayPlugin {
 
     private static void compress(FileCompressor compressor, FileInfo fileInfo, Writer out)
             throws Exception {
+
         String fileName = fileInfo.file.getName();
-        BufferedReader in = new BufferedReader(new FileReader(fileInfo.file));
+        BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(
+                fileInfo.file), "UTF-8"));
 
         // If the file should be compressed
         if (fileInfo.compress) {
