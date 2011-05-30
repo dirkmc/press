@@ -53,7 +53,9 @@ public class Press extends Controller {
         // compressedFile.length());
 
         try {
-            inputStream.reset();
+            if(inputStream.markSupported()) {
+                inputStream.reset();
+            }
         } catch (IOException e) {
             throw new UnexpectedException(e);
         }
