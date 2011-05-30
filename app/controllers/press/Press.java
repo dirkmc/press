@@ -1,6 +1,7 @@
 package controllers.press;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
@@ -44,7 +45,20 @@ public class Press extends Controller {
         }
 
         InputStream inputStream = compressedFile.inputStream();
-        renderBinary(inputStream, compressedFile.name(), compressedFile.length());
+
+        // This seems to be buggy, so instead of passing the file length we
+        // reset the input stream and allow play to manually copy the bytes from
+        // the input stream to the response
+        // renderBinary(inputStream, compressedFile.name(),
+        // compressedFile.length());
+
+        try {
+            inputStream.reset();
+        } catch (IOException e) {
+            throw new UnexpectedException(e);
+        }
+        renderBinary(inputStream, compressedFile.name());
+
     }
 
     public static void clearJSCache() {
