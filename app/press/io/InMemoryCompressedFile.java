@@ -6,9 +6,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import play.cache.Cache;
 import play.exceptions.UnexpectedException;
@@ -65,7 +66,7 @@ public class InMemoryCompressedFile extends CompressedFile {
     @Override
     public Writer startWrite() {
         // Compression might take a while, so if we're already writing out the
-        // compressed file form a different thread, return null
+        // compressed file from a different thread, return null
         String inProgressKey = getInProgressKey(getFilePath());
         if (Cache.get(inProgressKey) != null) {
             return null;
@@ -97,6 +98,9 @@ public class InMemoryCompressedFile extends CompressedFile {
         byte[] outBytes = outputStream.toByteArray();
         PressLogger.trace("Saving file of size %d bytes to cache.", outBytes.length);
         addFileToCache(getFilePath(), outBytes);
+        
+        String inProgressKey = getInProgressKey(getFilePath());
+        Cache.safeDelete(inProgressKey);
     }
 
     private static String getInProgressKey(String filePath) {
@@ -114,7 +118,7 @@ public class InMemoryCompressedFile extends CompressedFile {
     private void addFileToCache(String filePath, byte[] outBytes) {
         long startTime = System.currentTimeMillis();
 
-        List<String> fileList = getFileList();
+        Set<String> fileList = getFileList();
         fileList.add(filePath);
         Cache.set(FILE_LIST_KEY, fileList, A_VERY_LONG_TIME);
 
@@ -124,13 +128,16 @@ public class InMemoryCompressedFile extends CompressedFile {
                     "Underlying cache implementation could not store compressed file " + filePath
                             + " in cache");
         }
-
+        
+        inputStream = null;
+        bytes = null;
+        
         long totalTime = System.currentTimeMillis() - startTime;
         PressLogger.trace("Saved file to cache in %d milli-seconds", totalTime);
     }
 
     public static int clearMemoryCache(String extension) {
-        List<String> files = getFileList();
+        Set<String> files = getFileList();
         for (String filePath : files) {
             Cache.delete(getCacheKey(filePath));
             Cache.delete(getInProgressKey(filePath));
@@ -139,10 +146,10 @@ public class InMemoryCompressedFile extends CompressedFile {
         return files.size();
     }
 
-    private static List<String> getFileList() {
-        List<String> fileList = (List<String>) Cache.get(FILE_LIST_KEY);
+    private static Set<String> getFileList() {
+        Set<String> fileList = (Set<String>) Cache.get(FILE_LIST_KEY);
         if (fileList == null) {
-            fileList = new ArrayList<String>();
+            fileList = new HashSet<String>();
         }
         return fileList;
     }
