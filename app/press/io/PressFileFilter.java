@@ -22,6 +22,6 @@ public class PressFileFilter implements FileFilter {
         // compressed file
         VirtualFile virt = VirtualFile.open(file);
         CompressedFile compressedFile = CompressedFile.create(virt.relativePath());
-        return compressedFile.exists() && Compressor.extractHeaderContent(compressedFile) != null;
+        return compressedFile.exists() && Compressor.hasPressHeader(compressedFile);
     }
 }

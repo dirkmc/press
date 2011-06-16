@@ -5,16 +5,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
 import play.exceptions.UnexpectedException;
 import play.mvc.Controller;
 import press.CSSCompressor;
+import press.CachingStrategy;
 import press.JSCompressor;
 import press.PluginConfig;
 import press.io.CompressedFile;
 import press.io.FileIO;
 
 public class Press extends Controller {
-
+	public static final DateTimeFormatter httpDateTimeFormatter = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'");
     public static void getCompressedJS(String key) {
         key = FileIO.unescape(key);
         CompressedFile compressedFile = JSCompressor.getCompressedFile(key);
@@ -59,6 +64,21 @@ public class Press extends Controller {
         } catch (IOException e) {
             throw new UnexpectedException(e);
         }
+        
+        // If the caching strategy is always, the timestamp is not part of the key. If 
+        // we let the browser cache, then the browser will keep holding old copies, even after
+        // changing the files at the server and restarting the server, since the key will
+        // stay the same.
+        // If the caching strategy is never, we also don't want to cache at the browser, for 
+        // obvious reasons.
+        // If the caching strategy is Change, then the modified timestamp is a part of the key, 
+        // so if the file changes, the key in the html file will be modified, and the browser will
+        // request a new version. Each version can therefore be cached indefinitely.
+        if(PluginConfig.cache.equals(CachingStrategy.Change)) {
+        	response.setHeader("Cache-Control", "max-age=" + 31536000); // A year
+        	response.setHeader("Expires", httpDateTimeFormatter.print(new DateTime().plusYears(1)));
+        }
+        
         renderBinary(inputStream, compressedFile.name());
 
     }

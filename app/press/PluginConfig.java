@@ -12,8 +12,7 @@ public class PluginConfig {
         public static final boolean enabled = (Play.mode == Mode.PROD);
 
         // The caching strategy
-        public static final CachingStrategy cache = (Play.mode == Mode.DEV) ? CachingStrategy.Change
-                : CachingStrategy.Always;
+        public static final CachingStrategy cache = CachingStrategy.Change;
 
         // Whether the cache can be cleared through the web interface
         // Default is to be available in dev only
