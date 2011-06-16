@@ -118,15 +118,15 @@ h2. <a name="caching">Server Caching</a>
 When a compressed file is generated for a given set of input files, it is stored on disk in a configurable location. The next time the same set of files in the same order is requested, the file is retrieved from the cache. This is server side caching.
 
 __press__ has three different caching mechanisms, of which you can choose one. 
-* The most useful caching strategy is **Change**: __press__ will detect changes to the JS and CSS files real time. Simply save and refresh the page. This caching strategy is also the only one that sets the proper headers for "Client Caching":#clientcaching. This strategy is recommended in all cases. 
+* Caching strategy **Change**: __press__ will detect changes to the JS and CSS files in real time, simply save and refresh the page. This is the recommended caching strategy as it sets the appropriate headers for "Client Side Caching":#clientcaching.
 * Caching strategy **Always**: __press__ will not auto-detect changes. The cache is cleared each time the server is restarted. With this strategy, client side caching is disabled.
 * Caching strategy **Never**: __press__ will not use the cache. Compression will be performed for every page request. This mode obviously puts a high load on the server and is only recommended if one of the above strategies cannot be used for some reason. Also, client side caching is disabled.
 
 h2. <a name="clientcaching">Client Side Caching</a>
 
-If you use the **Change** caching strategy, __press__ will generate a unique key for the files that you compress, that contains the last modified timestamp of these files. Now when the compressed file is served, it is send with an HTTP Header to tell the browser that the file does not expire, and can be cached. When you modify the source file, the key changes automatically, so only then will a browser do a new request.
+With the **Change** caching strategy, __press__ will generate the compressed file name from the last modified timestamp of each file added to compression. Cache control headers are sent when the file is served so that the browser will cache the file. If any of the component files changes the compressed file name will also change, and the browser will request the new file.
 
-With the **Always** or **Never** caching strategies, the file modification time is not part of the key, and no cache-enabling header is sent. 
+With the **Always** or **Never** caching strategies, the last modified timestamp is not part of the file name, and no cache-enabling header is sent. 
 
 h2. <a name="inmem">In-Memory storage</a>
 
@@ -157,10 +157,10 @@ h3. __press.cache__
 The caching strategy to use. See "Caching":#caching.
 
 **press.cache=Change**
-   The compressed file will be regenerated when the last modified date of one of the source js or css files is detected to have changed, and client side caching is maximized - recommended for all purposes.
+   The compressed file will be regenerated when the last modified date of one of the source js or css files is detected to have changed. This mode is recommended as the appropriate cache control headers are sent, allowing the browser to cache the file.
    
 **press.cache=Always**
-   The server cache will always be used, regardless of whether the component files have changed. The server cache will be cleared when the server is restarted. Client side caching is disabled. This mode is not recommended.
+   The server cache will always be used, regardless of whether the component files have changed. The server cache will be cleared when the server is restarted. Client side caching is disabled.
 
 **press.cache=Never**
    The cache will not be used: the js and css files will be compressed on every request, and client side caching is disabled.
@@ -279,6 +279,7 @@ The following people have contributed to the development of this plugin:
 * Jarno Rantanen
 * judu
 * Juergen Stumpp
+* Erik Bakker
 
 Thanks!
 
