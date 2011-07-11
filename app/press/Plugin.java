@@ -240,7 +240,7 @@ public class Plugin extends PlayPlugin {
      * tags within the HTML.
      */
     private static String getScriptTag(String src) {
-        return "<script src=\"" + src
+        return "<script src=\"" + press.PluginConfig.contentHostingDomain + src
                 + "\" type=\"text/javascript\" language=\"javascript\" charset=\"utf-8\">"
                 + "</script>\n";
     }
@@ -250,7 +250,7 @@ public class Plugin extends PlayPlugin {
      * within the HTML.
      */
     private static String getLinkTag(String src) {
-        return "<link href=\"" + src + "\" rel=\"stylesheet\" type=\"text/css\" charset=\"utf-8\">"
+        return "<link href=\"" + press.PluginConfig.contentHostingDomain + src + "\" rel=\"stylesheet\" type=\"text/css\" charset=\"utf-8\">"
                 + (press.PluginConfig.htmlCompatible ? "" : "</link>") + "\n";
     }
 }
