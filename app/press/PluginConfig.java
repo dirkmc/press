@@ -35,6 +35,10 @@ public class PluginConfig {
         // HTML standard. For example HTML requires that a closing LINK tag MUST
         // NOT be output, while XHTML requires that it MUST be output
         public static final boolean htmlCompatible = false;
+       
+        // The domain which is storing the content.  Can be set for use with a CDN.
+        // Will be used to turn a relative URI into an absolute URL.
+        public static final String contentHostingDomain = "";
 
         public static class js {
             // The directory where source javascript files are read from
@@ -70,6 +74,7 @@ public class PluginConfig {
     public static String compressionKeyStorageTime;
     public static int maxCompressionTimeMillis;
     public static boolean htmlCompatible;
+    public static String contentHostingDomain;
 
     public static class js {
         public static String srcDir = DefaultConfig.js.srcDir;
@@ -114,6 +119,8 @@ public class PluginConfig {
                 DefaultConfig.maxCompressionTimeMillis);
         htmlCompatible = ConfigHelper.getBoolean("press.htmlCompatible",
                 DefaultConfig.htmlCompatible);
+        contentHostingDomain = ConfigHelper.getString("press.contentHostingDomain",
+        		DefaultConfig.contentHostingDomain);
 
         css.srcDir = ConfigHelper.getString("press.css.sourceDir", DefaultConfig.css.srcDir);
         css.compressedDir = ConfigHelper.getString("press.css.outputDir",
