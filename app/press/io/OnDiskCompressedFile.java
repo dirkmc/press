@@ -89,6 +89,13 @@ public class OnDiskCompressedFile extends CompressedFile {
                     "Writer has not yet been created. Call getWriter() and write to it.");
         }
 
+        try {
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            throw new UnexpectedException(e);
+        }
+        
         // Output was written to a temporary file, so rename it to overwrite the
         // true destination file.
         String msg = "Output written to temporary file\n%s\n"
@@ -101,14 +108,7 @@ public class OnDiskCompressedFile extends CompressedFile {
             ex += "\nBut could not move it to final path\n" + finalPath;
             throw new PressException(ex);
         }
-
-        try {
-            tmpOutputFile = null;
-            writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            throw new UnexpectedException(e);
-        }
+        tmpOutputFile = null;
     }
 
     private static File getTmpOutputFile(VirtualFile file) {
