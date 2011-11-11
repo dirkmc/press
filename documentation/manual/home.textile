@@ -281,6 +281,7 @@ The following people have contributed to the development of this plugin:
 * Juergen Stumpp
 * Erik Bakker
 * Geert-Jan
+* Kang-Sze Lin
 
 Thanks!
 
