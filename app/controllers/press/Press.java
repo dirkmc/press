@@ -11,6 +11,7 @@ import org.joda.time.format.DateTimeFormatter;
 
 import play.exceptions.UnexpectedException;
 import play.mvc.Controller;
+import play.mvc.Scope.Flash;
 import press.CSSCompressor;
 import press.CachingStrategy;
 import press.JSCompressor;
@@ -45,6 +46,8 @@ public class Press extends Controller {
     }
 
     private static void renderCompressedFile(CompressedFile compressedFile, String type) {
+        flash.keep();
+
         if (compressedFile == null) {
             renderBadResponse(type);
         }

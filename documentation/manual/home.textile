@@ -282,6 +282,7 @@ The following people have contributed to the development of this plugin:
 * Erik Bakker
 * Geert-Jan
 * Kang-Sze Lin
+* sauravshah
 
 Thanks!
 
