@@ -160,18 +160,34 @@ public class OnDiskCompressedFile extends CompressedFile {
             return 0;
         }
 
-        // Get a list of all compressed files, and delete them
+        int[] deletedCounter = {0};
+        deletePressFilesRecursively(dir.getRealFile(), extension, deletedCounter);
+
+        PressLogger.trace("Deleted %d cached files", deletedCounter[0]);
+        return deletedCounter[0];
+    }
+    
+    
+    private static void deletePressFilesRecursively(File directory, String extension, int[] deletedCounter) {
+        // First delete compressed Press-files
         FileFilter compressedFileFilter = new PressFileFilter(extension);
-        File[] files = dir.getRealFile().listFiles(compressedFileFilter);
-        int deleted = 0;
+        File[] files = directory.listFiles(compressedFileFilter);
         for (File file : files) {
             if (file.delete()) {
-                deleted++;
+                deletedCounter[0]++;
             }
         }
 
-        PressLogger.trace("Deleted %d cached files", deleted);
-        return deleted;
+        // Second, recursively go through sub-directories
+        FileFilter directoryFilter = new FileFilter() {
+            public boolean accept(File file) {
+                return file.isDirectory();
+            }
+        };
+        File[] subDirectories = directory.listFiles(directoryFilter);
+        for (File subDir : subDirectories) {
+            deletePressFilesRecursively(subDir, extension, deletedCounter);
+        }
     }
 
     @Override
