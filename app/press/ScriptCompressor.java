@@ -1,5 +1,6 @@
 package press;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -14,10 +15,16 @@ import press.io.FileIO;
 
 import com.yahoo.platform.yui.compressor.JavaScriptCompressor;
 
-public class JSCompressor extends Compressor {
+public class ScriptCompressor extends Compressor {
+    public static final String EXTENSION = ".js";
+    
+    public ScriptCompressor() {
+        super(PluginConfig.js.srcDir, PluginConfig.js.compressedDir, EXTENSION);
+    }
+
+    /*
     public static final String TAG_NAME = "#{press.script}";
     public static final String FILE_TYPE = "JavaScript";
-    public static final String EXTENSION = ".js";
 
     public JSCompressor() {
         super(FILE_TYPE, EXTENSION, TAG_NAME, "#{press.compressed-script}", "<!-- press-js: ",
@@ -31,24 +38,10 @@ public class JSCompressor extends Compressor {
     public static CompressedFile getCompressedFile(String key) {
         return getCompressedFile(jsFileCompressor, key, PluginConfig.js.compressedDir, EXTENSION);
     }
-    
-    public static VirtualFile checkJSFileExists(String fileName) {
-        return FileIO.checkFileExists(fileName, PluginConfig.js.srcDir);
-    }
-
+*/
     public static int clearCache() {
         return clearCache(PluginConfig.js.compressedDir, EXTENSION);
     }
-
-    static FileCompressor jsFileCompressor = new FileCompressor() {
-        public void compress(String fileName, Reader in, Writer out) throws IOException {
-            ErrorReporter errorReporter = new PressErrorReporter(fileName);
-            JavaScriptCompressor compressor = new JavaScriptCompressor(in, errorReporter);
-            compressor.compress(out, PluginConfig.js.lineBreak, PluginConfig.js.munge,
-                    PluginConfig.js.warn, PluginConfig.js.preserveAllSemiColons,
-                    PluginConfig.js.preserveStringLiterals);
-        }
-    };
 
     static class PressErrorReporter implements ErrorReporter {
         private static final String PREFIX = "[YUI Compressor] ";
@@ -82,5 +75,15 @@ public class JSCompressor extends Compressor {
             error(message, sourceName, line, lineSource, lineOffset);
             return new EvaluatorException(message);
         }
+    }
+
+    @Override
+    public void compress(File sourceFile, Writer out) throws IOException {
+        ErrorReporter errorReporter = new PressErrorReporter(sourceFile.getName());
+        Reader in = FileIO.getReader(sourceFile);
+        JavaScriptCompressor compressor = new JavaScriptCompressor(in, errorReporter);
+        compressor.compress(out, PluginConfig.js.lineBreak, PluginConfig.js.munge,
+                PluginConfig.js.warn, PluginConfig.js.preserveAllSemiColons,
+                PluginConfig.js.preserveStringLiterals);
     }
 }

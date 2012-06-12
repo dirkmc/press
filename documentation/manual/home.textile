@@ -284,6 +284,7 @@ The following people have contributed to the development of this plugin:
 * Kang-Sze Lin
 * sauravshah
 * Pyry-Samuli Lahti
+* benoit
 
 Thanks!
 

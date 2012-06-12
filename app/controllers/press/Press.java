@@ -11,37 +11,40 @@ import org.joda.time.format.DateTimeFormatter;
 
 import play.exceptions.UnexpectedException;
 import play.mvc.Controller;
-import play.mvc.Scope.Flash;
-import press.CSSCompressor;
 import press.CachingStrategy;
-import press.JSCompressor;
 import press.PluginConfig;
+import press.ScriptCompressor;
+import press.ScriptRequestHandler;
+import press.StyleCompressor;
+import press.StyleRequestHandler;
 import press.io.CompressedFile;
 import press.io.FileIO;
 
 public class Press extends Controller {
-	public static final DateTimeFormatter httpDateTimeFormatter = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'");
+    public static final DateTimeFormatter httpDateTimeFormatter = DateTimeFormat
+            .forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'");
+
     public static void getCompressedJS(String key) {
         key = FileIO.unescape(key);
-        CompressedFile compressedFile = JSCompressor.getCompressedFile(key);
+        CompressedFile compressedFile = new ScriptCompressor().getCompressedFile(key);
         renderCompressedFile(compressedFile, "JavaScript");
     }
 
     public static void getCompressedCSS(String key) {
         key = FileIO.unescape(key);
-        CompressedFile compressedFile = CSSCompressor.getCompressedFile(key);
+        CompressedFile compressedFile = new StyleCompressor().getCompressedFile(key);
         renderCompressedFile(compressedFile, "CSS");
     }
 
     public static void getSingleCompressedJS(String key) {
         key = FileIO.unescape(key);
-        CompressedFile compressedFile = JSCompressor.getSingleCompressedFile(key);
+        CompressedFile compressedFile = new ScriptCompressor().getSingleCompressedFile(key);
         renderCompressedFile(compressedFile, "JavaScript");
     }
 
     public static void getSingleCompressedCSS(String key) {
         key = FileIO.unescape(key);
-        CompressedFile compressedFile = CSSCompressor.getSingleCompressedFile(key);
+        CompressedFile compressedFile = new StyleCompressor().getSingleCompressedFile(key);
         renderCompressedFile(compressedFile, "CSS");
     }
 
@@ -61,27 +64,30 @@ public class Press extends Controller {
         // compressedFile.length());
 
         try {
-            if(inputStream.markSupported()) {
+            if (inputStream.markSupported()) {
                 inputStream.reset();
             }
         } catch (IOException e) {
             throw new UnexpectedException(e);
         }
-        
-        // If the caching strategy is always, the timestamp is not part of the key. If 
-        // we let the browser cache, then the browser will keep holding old copies, even after
-        // changing the files at the server and restarting the server, since the key will
-        // stay the same.
-        // If the caching strategy is never, we also don't want to cache at the browser, for 
-        // obvious reasons.
-        // If the caching strategy is Change, then the modified timestamp is a part of the key, 
-        // so if the file changes, the key in the html file will be modified, and the browser will
-        // request a new version. Each version can therefore be cached indefinitely.
-        if(PluginConfig.cache.equals(CachingStrategy.Change)) {
-        	response.setHeader("Cache-Control", "max-age=" + 31536000); // A year
-        	response.setHeader("Expires", httpDateTimeFormatter.print(new DateTime().plusYears(1)));
+
+        // If the caching strategy is always, the timestamp is not part of the
+        // key. If we let the browser cache, then the browser will keep holding
+        // old copies, even after changing the files at the server and
+        // restarting the server, since the
+        // key will stay the same.
+        // If the caching strategy is never, we also don't want to cache at the
+        // browser, for obvious reasons.
+        // If the caching strategy is Change, then the modified timestamp is a
+        // part of the key, so if the file changes, the key in the html file
+        // will be modified, and the browser will request a new version. Each
+        // version can therefore be cached indefinitely.
+        if (PluginConfig.cache.equals(CachingStrategy.Change)) {
+            // Cache for a year
+            response.setHeader("Cache-Control", "max-age=" + 31536000);
+            response.setHeader("Expires", httpDateTimeFormatter.print(new DateTime().plusYears(1)));
         }
-        
+
         renderBinary(inputStream, compressedFile.name());
 
     }
@@ -91,7 +97,7 @@ public class Press extends Controller {
             forbidden();
         }
 
-        int count = JSCompressor.clearCache();
+        int count = ScriptRequestHandler.clearCache();
         renderText("Cleared " + count + " JS files from cache");
     }
 
@@ -100,7 +106,7 @@ public class Press extends Controller {
             forbidden();
         }
 
-        int count = CSSCompressor.clearCache();
+        int count = StyleRequestHandler.clearCache();
         renderText("Cleared " + count + " CSS files from cache");
     }
 
