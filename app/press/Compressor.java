@@ -28,7 +28,7 @@ public abstract class Compressor extends PlayPlugin {
 
     // Directory for the compressed output, eg "/public/javascripts/press/js"
     String compressedDir;
-    
+
     // The extension of the output file, eg ".js"
     private String extension;
 
@@ -46,14 +46,15 @@ public abstract class Compressor extends PlayPlugin {
      */
     public String compressedSingleFileUrl(String fileName) {
         PressLogger.trace("Request to compress single file %s", fileName);
+        VirtualFile srcFile = FileIO.checkFileExists(fileName, srcDir);
 
         int lastDot = fileName.lastIndexOf('.');
-        String compressedFileName = fileName.substring(0, lastDot) + ".min";
+        String compressedFileName = fileName.substring(0, lastDot) + "." + srcFile.lastModified()
+                + ".min";
         compressedFileName += fileName.substring(lastDot);
 
         // The process for compressing a single file is the same as for a group
         // of files, the list just has a single entry
-        VirtualFile srcFile = FileIO.checkFileExists(fileName, srcDir);
         List<FileInfo> componentFiles = new ArrayList<FileInfo>(1);
         componentFiles.add(new FileInfo(compressedFileName, true, srcFile));
 

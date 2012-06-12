@@ -3,6 +3,7 @@ h1. press
 The __press__ module is a JavaScript and CSS minimizer that is designed to be transparent to the application developer:
 Simply replace **==&lt;script>==** tags with **#{press.script}** tags, and **==&lt;link rel="stylesheet">==** tags with **#{press.stylesheet}** tags.
 
+Press now also supports Less CSS.
 
 h2. <a>Enable press</a>
 
