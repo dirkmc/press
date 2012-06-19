@@ -4,31 +4,33 @@ import java.util.HashMap;
 import java.util.Map;
 
 import play.mvc.Router;
+import play.vfs.VirtualFile;
 import press.io.FileIO;
 
 public abstract class RequestHandler {
     Map<String, Boolean> files = new HashMap<String, Boolean>();
 
+    abstract String getTag(String src);
+
     abstract protected SourceFileManager getSourceManager();
 
-    abstract protected Compressor getCompressor();
+    abstract protected CompressedFileManager getCompressedFileManager();
 
-    abstract String getSingleCompressedUrl(String requestKey);
+    abstract public String getCompressedUrl(String requestKey);
 
-    abstract public String getMultiCompressedUrl(String requestKey);
+    abstract public String getSingleFileCompressionKey(String fileName);
 
-    abstract String getTag(String src);
+    protected String getSingleFileCompressionKey(String fileName, SourceFileManager tmpManager) {
+        PressLogger.trace("Request to compress single file %s", fileName);
+        return tmpManager.addSingleFile(fileName, true);
+    }
 
     public String getSrcDir() {
         return getSourceManager().srcDir;
     }
 
-    public void checkFileExists(String fileName) {
-        FileIO.checkFileExists(fileName, getSrcDir());
-    }
-
-    public String compressedSingleFileUrl(String fileName) {
-        return getCompressor().compressedSingleFileUrl(fileName);
+    public VirtualFile checkFileExists(String fileName) {
+        return getSourceManager().checkFileExists(fileName);
     }
 
     public String add(String fileName, boolean packFile) {

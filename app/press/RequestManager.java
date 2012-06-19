@@ -23,12 +23,7 @@ public class RequestManager {
 
         String src = null;
         if (performCompression()) {
-            String requestKey = handler.compressedSingleFileUrl(fileName);
-            if (PluginConfig.isInMemoryStorage()) {
-                src = handler.getSingleCompressedUrl(requestKey);
-            } else {
-                src = requestKey;
-            }
+            src = handler.getCompressedUrl(handler.getSingleFileCompressionKey(fileName));
         } else {
             src = handler.getSrcDir() + fileName;
         }
@@ -58,7 +53,7 @@ public class RequestManager {
         RequestHandler handler = getRequestHandler(rqType);
         if (performCompression()) {
             String requestKey = handler.closeRequest();
-            return handler.getTag(handler.getMultiCompressedUrl(requestKey));
+            return handler.getTag(handler.getCompressedUrl(requestKey));
         }
         return "";
     }

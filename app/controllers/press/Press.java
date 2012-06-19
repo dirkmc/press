@@ -13,8 +13,10 @@ import play.exceptions.UnexpectedException;
 import play.mvc.Controller;
 import press.CachingStrategy;
 import press.PluginConfig;
+import press.ScriptCompressedFileManager;
 import press.ScriptCompressor;
 import press.ScriptRequestHandler;
+import press.StyleCompressedFileManager;
 import press.StyleCompressor;
 import press.StyleRequestHandler;
 import press.io.CompressedFile;
@@ -26,25 +28,13 @@ public class Press extends Controller {
 
     public static void getCompressedJS(String key) {
         key = FileIO.unescape(key);
-        CompressedFile compressedFile = new ScriptCompressor().getCompressedFile(key);
+        CompressedFile compressedFile = new ScriptCompressedFileManager().getCompressedFile(key);
         renderCompressedFile(compressedFile, "JavaScript");
     }
 
     public static void getCompressedCSS(String key) {
         key = FileIO.unescape(key);
-        CompressedFile compressedFile = new StyleCompressor().getCompressedFile(key);
-        renderCompressedFile(compressedFile, "CSS");
-    }
-
-    public static void getSingleCompressedJS(String key) {
-        key = FileIO.unescape(key);
-        CompressedFile compressedFile = new ScriptCompressor().getSingleCompressedFile(key);
-        renderCompressedFile(compressedFile, "JavaScript");
-    }
-
-    public static void getSingleCompressedCSS(String key) {
-        key = FileIO.unescape(key);
-        CompressedFile compressedFile = new StyleCompressor().getSingleCompressedFile(key);
+        CompressedFile compressedFile = new StyleCompressedFileManager().getCompressedFile(key);
         renderCompressedFile(compressedFile, "CSS");
     }
 
@@ -74,8 +64,7 @@ public class Press extends Controller {
         // If the caching strategy is always, the timestamp is not part of the
         // key. If we let the browser cache, then the browser will keep holding
         // old copies, even after changing the files at the server and
-        // restarting the server, since the
-        // key will stay the same.
+        // restarting the server, since the key will stay the same.
         // If the caching strategy is never, we also don't want to cache at the
         // browser, for obvious reasons.
         // If the caching strategy is Change, then the modified timestamp is a

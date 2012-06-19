@@ -1,9 +1,8 @@
 package press;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +74,7 @@ public abstract class SourceFileManager extends PlayPlugin {
     public String getFileType() {
         return fileType;
     }
-    
+
     /**
      * Adds a file to the list of files to be compressed
      * 
@@ -93,7 +92,7 @@ public abstract class SourceFileManager extends PlayPlugin {
         }
 
         // Add the file to the list of files to be compressed
-        fileInfos.put(fileName, new FileInfo(fileName, compress, checkFileExists(fileName)));
+        fileInfos.put(fileName, new FileInfo(compress, checkFileExists(fileName)));
 
         return getFileRequestSignature(fileName);
     }
@@ -110,11 +109,10 @@ public abstract class SourceFileManager extends PlayPlugin {
                     + " tag in the template output. " + "There must be one only.";
             throw new PressException(msg);
         }
-        requestKey = getRequestKey() + extension;
+        requestKey = getRequestKey(fileInfos);
 
         PressLogger
                 .trace("Adding key %s for compression of %d files", requestKey, fileInfos.size());
-
         return requestKey;
     }
 
@@ -122,13 +120,12 @@ public abstract class SourceFileManager extends PlayPlugin {
      * The request key is is derived from the list of files - for the same list
      * of files we should always return the same compressed javascript or css.
      */
-    private String getRequestKey() {
+    public String getRequestKey(Map<String, FileInfo> fileInfoMap) {
         String key = "";
-        for (Entry<String, FileInfo> entry : fileInfos.entrySet()) {
+        for (Entry<String, FileInfo> entry : fileInfoMap.entrySet()) {
             key += entry.getKey();
             // If we use the 'Change' caching strategy, make the modified
-            // timestamp
-            // of each file part of the key.
+            // timestamp of each file part of the key.
             if (PluginConfig.cache.equals(CachingStrategy.Change)) {
                 key += entry.getValue().getLastModified();
             }
@@ -136,7 +133,7 @@ public abstract class SourceFileManager extends PlayPlugin {
 
         // Get a hash of the url to keep it short
         String hashed = Crypto.passwordHash(key);
-        return FileIO.lettersOnly(hashed);
+        return FileIO.lettersOnly(hashed) + extension;
     }
 
     public void saveFileList() {
@@ -208,24 +205,25 @@ public abstract class SourceFileManager extends PlayPlugin {
         return filesInOrder;
     }
 
-    public void addFileListToCache(String cacheKey, List<FileInfo> originalList) {
+    public static void addFileListToCache(String cacheKey, Collection<FileInfo> originalList) {
+        // Clone the file list
         List<FileInfo> newList = new ArrayList<FileInfo>();
         for (FileInfo fileInfo : originalList) {
-            VirtualFile file = FileIO.getVirtualFile(srcDir + fileInfo.fileName);
-
-            // Check the file exists
-            if (!file.exists()) {
-                String msg = "Attempt to add file '" + file.getRealFile().getAbsolutePath() + "' ";
-                msg += "to compression with " + tagName + " tag but file does not exist.";
-                throw new PressException(msg);
-            }
-
-            newList.add(new FileInfo(fileInfo.fileName, fileInfo.compress, file));
+            newList.add(fileInfo);
         }
 
         // Add a mapping between the request key and the list of files that
         // are compressed for the request
         Cache.safeSet(cacheKey, newList, PluginConfig.compressionKeyStorageTime);
+    }
+
+    public String addSingleFile(String fileName, boolean compress) {
+        VirtualFile file = checkFileExists(fileName);
+        Map<String, FileInfo> files = new HashMap<String, FileInfo>(1);
+        files.put(fileName, new FileInfo(compress, file));
+        String cacheKey = getRequestKey(files);
+        addFileListToCache(cacheKey, files.values());
+        return cacheKey;
     }
 
     /**

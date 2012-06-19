@@ -4,18 +4,20 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import play.vfs.VirtualFile;
 
 public class FileInfo implements Serializable {
-    String fileName;
     boolean compress;
     public File file;
 
-    public FileInfo(String fileName, boolean compress, VirtualFile file) {
-        this.fileName = fileName;
+    public FileInfo(boolean compress, VirtualFile file) {
         this.compress = compress;
+        // We store the File instead of a VirtualFile so that this class can be
+        // serialized
         this.file = file == null ? null : file.getRealFile();
     }
 
@@ -23,21 +25,19 @@ public class FileInfo implements Serializable {
         return file.lastModified();
     }
 
-    public static Collection<String> getFileNames(List<FileInfo> list) {
-        Collection<String> fileNames = new ArrayList<String>(list.size());
-        for (FileInfo fileInfo : list) {
-            fileNames.add(fileInfo.fileName);
+    public static List<File> getFiles(List<FileInfo> fileInfos) {
+        List<File> files = new ArrayList<File>();
+        for (FileInfo info : fileInfos) {
+            files.add(info.file);
         }
-
-        return fileNames;
+        return files;
     }
 
-    public static Collection<String> getFileNamesAndModifiedTimestamps(List<FileInfo> list) {
-        Collection<String> fileNamesAndModifiedTimestamps = new ArrayList<String>(list.size());
-        for (FileInfo fileInfo : list) {
-            fileNamesAndModifiedTimestamps.add(fileInfo.fileName + fileInfo.getLastModified());
+    public static Map<String, Long> getFileLastModifieds(List<FileInfo> fileInfos) {
+        Map<String, Long> files = new HashMap<String, Long>();
+        for (FileInfo info : fileInfos) {
+            files.put(info.file.getAbsolutePath(), info.file.lastModified());
         }
-
-        return fileNamesAndModifiedTimestamps;
+        return files;
     }
 }

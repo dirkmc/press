@@ -1,16 +1,11 @@
 package press;
 
 public class ScriptRequestHandler extends RequestHandler {
-    private SourceFileManager srcManager = new ScriptFileManager();
-    private Compressor compressor = new ScriptCompressor();
+    private SourceFileManager srcManager = new ScriptSourceFileManager();
+    private CompressedFileManager compressManager = new ScriptCompressedFileManager();
 
     @Override
-    public String getSingleCompressedUrl(String requestKey) {
-        return getCompressedUrl("press.Press.getSingleCompressedJS", requestKey);
-    }
-
-    @Override
-    public String getMultiCompressedUrl(String requestKey) {
+    public String getCompressedUrl(String requestKey) {
         return getCompressedUrl("press.Press.getCompressedJS", requestKey);
     }
 
@@ -27,11 +22,16 @@ public class ScriptRequestHandler extends RequestHandler {
     }
 
     @Override
-    protected Compressor getCompressor() {
-        return compressor;
+    protected CompressedFileManager getCompressedFileManager() {
+        return compressManager;
     }
 
     public static int clearCache() {
         return ScriptCompressor.clearCache();
+    }
+
+    @Override
+    public String getSingleFileCompressionKey(String fileName) {
+        return super.getSingleFileCompressionKey(fileName, new ScriptSourceFileManager());
     }
 }

@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.List;
+import java.util.Map;
 
 import org.mozilla.javascript.ErrorReporter;
 import org.mozilla.javascript.EvaluatorException;
@@ -16,31 +18,11 @@ import press.io.FileIO;
 import com.yahoo.platform.yui.compressor.JavaScriptCompressor;
 
 public class ScriptCompressor extends Compressor {
+    private static final String COMPRESSED_DIR = PluginConfig.js.compressedDir;
     public static final String EXTENSION = ".js";
-    
-    public ScriptCompressor() {
-        super(PluginConfig.js.srcDir, PluginConfig.js.compressedDir, EXTENSION);
-    }
 
-    /*
-    public static final String TAG_NAME = "#{press.script}";
-    public static final String FILE_TYPE = "JavaScript";
-
-    public JSCompressor() {
-        super(FILE_TYPE, EXTENSION, TAG_NAME, "#{press.compressed-script}", "<!-- press-js: ",
-                " -->", PluginConfig.js.srcDir, PluginConfig.js.compressedDir);
-    }
-
-    public String compressedSingleFileUrl(String fileName) {
-        return compressedSingleFileUrl(jsFileCompressor, fileName);
-    }
-
-    public static CompressedFile getCompressedFile(String key) {
-        return getCompressedFile(jsFileCompressor, key, PluginConfig.js.compressedDir, EXTENSION);
-    }
-*/
     public static int clearCache() {
-        return clearCache(PluginConfig.js.compressedDir, EXTENSION);
+        return clearCache(COMPRESSED_DIR, EXTENSION);
     }
 
     static class PressErrorReporter implements ErrorReporter {
@@ -78,12 +60,23 @@ public class ScriptCompressor extends Compressor {
     }
 
     @Override
-    public void compress(File sourceFile, Writer out) throws IOException {
+    public void compress(File sourceFile, Writer out, boolean compress) throws IOException {
+        if (!compress) {
+            FileIO.write(FileIO.getReader(sourceFile), out);
+            return;
+        }
+
         ErrorReporter errorReporter = new PressErrorReporter(sourceFile.getName());
         Reader in = FileIO.getReader(sourceFile);
         JavaScriptCompressor compressor = new JavaScriptCompressor(in, errorReporter);
         compressor.compress(out, PluginConfig.js.lineBreak, PluginConfig.js.munge,
                 PluginConfig.js.warn, PluginConfig.js.preserveAllSemiColons,
                 PluginConfig.js.preserveStringLiterals);
+    }
+
+    @Override
+    public String getCompressedFileKey(List<FileInfo> componentFiles) {
+        Map<String, Long> files = FileInfo.getFileLastModifieds(componentFiles);
+        return CacheManager.getCompressedFileKey(files, EXTENSION);
     }
 }

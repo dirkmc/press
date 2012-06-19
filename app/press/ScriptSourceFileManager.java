@@ -1,7 +1,7 @@
 package press;
 
-public class ScriptFileManager extends SourceFileManager {
-    public ScriptFileManager() {
+public class ScriptSourceFileManager extends SourceFileManager {
+    public ScriptSourceFileManager() {
         super("JavaScript", ScriptCompressor.EXTENSION, "#{press.script}",
                 "#{press.compressed-script}", "<!-- press-js: ", " -->", PluginConfig.js.srcDir);
     }

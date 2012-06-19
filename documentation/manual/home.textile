@@ -286,6 +286,7 @@ The following people have contributed to the development of this plugin:
 * sauravshah
 * Pyry-Samuli Lahti
 * benoit
+* Oren Ellenbogen
 
 Thanks!
 

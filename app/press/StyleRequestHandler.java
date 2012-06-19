@@ -2,15 +2,10 @@ package press;
 
 public class StyleRequestHandler extends RequestHandler {
     private SourceFileManager srcManager = new StyleFileManager();
-    private Compressor compressor = new StyleCompressor();
+    private CompressedFileManager compressManager = new StyleCompressedFileManager();
 
     @Override
-    public String getSingleCompressedUrl(String requestKey) {
-        return getCompressedUrl("press.Press.getSingleCompressedCSS", requestKey);
-    }
-
-    @Override
-    public String getMultiCompressedUrl(String requestKey) {
+    public String getCompressedUrl(String requestKey) {
         return getCompressedUrl("press.Press.getCompressedCSS", requestKey);
     }
 
@@ -27,11 +22,16 @@ public class StyleRequestHandler extends RequestHandler {
     }
 
     @Override
-    protected Compressor getCompressor() {
-        return compressor;
+    protected CompressedFileManager getCompressedFileManager() {
+        return compressManager;
     }
 
     public static int clearCache() {
         return StyleCompressor.clearCache();
+    }
+
+    @Override
+    public String getSingleFileCompressionKey(String fileName) {
+        return super.getSingleFileCompressionKey(fileName, new StyleFileManager());
     }
 }

@@ -25,8 +25,8 @@ public class InMemoryCompressedFile extends CompressedFile {
     private byte[] bytes;
     private static final String A_VERY_LONG_TIME = "3650d";
 
-    public InMemoryCompressedFile(String filePath) {
-        super(filePath);
+    public InMemoryCompressedFile(String fileKey) {
+        super(fileKey);
     }
 
     @Override
@@ -60,14 +60,14 @@ public class InMemoryCompressedFile extends CompressedFile {
 
     @Override
     public String name() {
-        return FileIO.getFileNameFromPath(getFilePath());
+        return FileIO.getFileNameFromPath(getFileKey());
     }
 
     @Override
     public Writer startWrite() {
         // Compression might take a while, so if we're already writing out the
         // compressed file from a different thread, return null
-        String inProgressKey = getInProgressKey(getFilePath());
+        String inProgressKey = getInProgressKey(getFileKey());
         if (Cache.get(inProgressKey) != null) {
             return null;
         }
@@ -101,35 +101,35 @@ public class InMemoryCompressedFile extends CompressedFile {
 
         byte[] outBytes = outputStream.toByteArray();
         PressLogger.trace("Saving file of size %d bytes to cache.", outBytes.length);
-        addFileToCache(getFilePath(), outBytes);
+        addFileToCache(getFileKey(), outBytes);
 
-        String inProgressKey = getInProgressKey(getFilePath());
+        String inProgressKey = getInProgressKey(getFileKey());
         Cache.safeDelete(inProgressKey);
     }
 
-    private static String getInProgressKey(String filePath) {
-        return "in-progress-" + filePath;
+    private static String getInProgressKey(String fileKey) {
+        return "in-progress-" + fileKey;
     }
 
     private String getCacheKey() {
-        return getCacheKey(getFilePath());
+        return getCacheKey(getFileKey());
     }
 
-    private static String getCacheKey(String filePath) {
-        return "file-" + filePath;
+    private static String getCacheKey(String fileKey) {
+        return "file-" + fileKey;
     }
 
-    private void addFileToCache(String filePath, byte[] outBytes) {
+    private void addFileToCache(String fileKey, byte[] outBytes) {
         long startTime = System.currentTimeMillis();
 
         Set<String> fileList = getFileList();
-        fileList.add(filePath);
+        fileList.add(fileKey);
         Cache.set(FILE_LIST_KEY, fileList, A_VERY_LONG_TIME);
 
-        String cacheKey = getCacheKey(filePath);
+        String cacheKey = getCacheKey(fileKey);
         if (!Cache.safeSet(cacheKey, outBytes, A_VERY_LONG_TIME)) {
             throw new PressException(
-                    "Underlying cache implementation could not store compressed file " + filePath
+                    "Underlying cache implementation could not store compressed file " + fileKey
                             + " in cache");
         }
 
@@ -142,9 +142,9 @@ public class InMemoryCompressedFile extends CompressedFile {
 
     public static int clearMemoryCache(String extension) {
         Set<String> files = getFileList();
-        for (String filePath : files) {
-            Cache.delete(getCacheKey(filePath));
-            Cache.delete(getInProgressKey(filePath));
+        for (String fileKey : files) {
+            Cache.delete(getCacheKey(fileKey));
+            Cache.delete(getInProgressKey(fileKey));
         }
         Cache.delete(FILE_LIST_KEY);
         return files.size();

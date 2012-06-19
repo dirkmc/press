@@ -6,22 +6,22 @@ import java.io.Writer;
 import press.PluginConfig;
 
 public abstract class CompressedFile {
-    private String filePath;
+    private String fileKey;
 
-    protected CompressedFile(String filePath) {
-        this.filePath = filePath;
+    protected CompressedFile(String fileKey) {
+        this.fileKey = fileKey;
     }
 
-    protected String getFilePath() {
-        return filePath;
+    public String getFileKey() {
+        return fileKey;
     }
 
-    public static CompressedFile create(String filePath) {
+    public static CompressedFile create(String fileKey) {
         if (PluginConfig.isInMemoryStorage()) {
-            return new InMemoryCompressedFile(filePath);
+            return new InMemoryCompressedFile(fileKey);
         }
 
-        return new OnDiskCompressedFile(filePath);
+        return new OnDiskCompressedFile(fileKey);
     }
 
     public static int clearCache(String compressedDir, String extension) {
