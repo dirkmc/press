@@ -287,6 +287,7 @@ The following people have contributed to the development of this plugin:
 * Pyry-Samuli Lahti
 * benoit
 * Oren Ellenbogen
+* João Augusto Venancio da Silva
 
 Thanks!
 
