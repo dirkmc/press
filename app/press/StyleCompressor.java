@@ -13,12 +13,11 @@ import press.io.FileIO;
 import com.yahoo.platform.yui.compressor.CssCompressor;
 
 public class StyleCompressor extends Compressor {
-    private static final String COMPRESSED_DIR = PluginConfig.css.compressedDir;
     public static final String EXTENSION = ".css";
     public static final PlayLessEngine lessEngine = new PlayLessEngine();
 
     public static int clearCache() {
-        return clearCache(COMPRESSED_DIR, EXTENSION);
+        return clearCache(PluginConfig.css.compressedDir, EXTENSION);
     }
 
     @Override

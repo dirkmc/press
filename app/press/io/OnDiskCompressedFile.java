@@ -20,9 +20,9 @@ public class OnDiskCompressedFile extends CompressedFile {
     private VirtualFile file;
     private File tmpOutputFile;
 
-    public OnDiskCompressedFile(String filePath) {
+    public OnDiskCompressedFile(String filePath, String compressedDir) {
         super(filePath);
-        file = FileIO.getVirtualFile(filePath);
+        file = FileIO.getVirtualFile(compressedDir + filePath);
     }
 
     @Override

@@ -20,8 +20,6 @@ public class PressFileFilter implements FileFilter {
 
         // If the file contains a compression header, it's a press
         // compressed file
-        VirtualFile virt = VirtualFile.open(file);
-        CompressedFile compressedFile = CompressedFile.create(virt.relativePath());
-        return compressedFile.exists() && PressFileWriter.hasPressHeader(compressedFile);
+        return PressFileWriter.hasPressHeader(file);
     }
 }

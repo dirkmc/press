@@ -18,11 +18,10 @@ import press.io.FileIO;
 import com.yahoo.platform.yui.compressor.JavaScriptCompressor;
 
 public class ScriptCompressor extends Compressor {
-    private static final String COMPRESSED_DIR = PluginConfig.js.compressedDir;
     public static final String EXTENSION = ".js";
 
     public static int clearCache() {
-        return clearCache(COMPRESSED_DIR, EXTENSION);
+        return clearCache(PluginConfig.js.compressedDir, EXTENSION);
     }
 
     static class PressErrorReporter implements ErrorReporter {

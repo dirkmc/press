@@ -6,7 +6,7 @@ import java.util.List;
 import play.vfs.VirtualFile;
 import press.io.CompressedFile;
 
-public class CompressedFileManager {
+public abstract class CompressedFileManager {
     private PressFileWriter pressFileWriter;
     private Compressor compressor;
 
@@ -37,7 +37,7 @@ public class CompressedFileManager {
     public CompressedFile getCompressedFile(List<FileInfo> componentFiles) {
         // First check if the compressor has a cached copy of the file
         String key = compressor.getCompressedFileKey(componentFiles);
-        CompressedFile file = CompressedFile.create(key);
+        CompressedFile file = CompressedFile.create(key, getCompressedDir());
         if (CacheManager.useCachedFile(file)) {
             return file;
         }
@@ -45,4 +45,6 @@ public class CompressedFileManager {
         // If there is no cached file, generate one
         return pressFileWriter.writeCompressedFile(componentFiles, file);
     }
+    
+    public abstract String getCompressedDir();
 }

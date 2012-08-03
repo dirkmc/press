@@ -16,12 +16,12 @@ public abstract class CompressedFile {
         return fileKey;
     }
 
-    public static CompressedFile create(String fileKey) {
+    public static CompressedFile create(String fileKey, String compressedDir) {
         if (PluginConfig.isInMemoryStorage()) {
             return new InMemoryCompressedFile(fileKey);
         }
 
-        return new OnDiskCompressedFile(fileKey);
+        return new OnDiskCompressedFile(fileKey, compressedDir);
     }
 
     public static int clearCache(String compressedDir, String extension) {

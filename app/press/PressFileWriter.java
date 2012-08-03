@@ -1,6 +1,8 @@
 package press;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Writer;
@@ -74,12 +76,12 @@ public class PressFileWriter {
         return "/*" + PRESS_SIGNATURE + "*/\n";
     }
 
-    public static boolean hasPressHeader(CompressedFile file) {
+    public static boolean hasPressHeader(File file) {
         try {
             if (!file.exists()) {
                 return false;
             }
-            BufferedReader reader = new BufferedReader(new InputStreamReader(file.inputStream()));
+            BufferedReader reader = new BufferedReader(new FileReader(file));
             String firstLine = reader.readLine();
             Matcher matcher = HEADER_PATTERN.matcher(firstLine);
             if (matcher.matches()) {
