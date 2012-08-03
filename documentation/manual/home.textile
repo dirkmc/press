@@ -186,6 +186,17 @@ By default files are stored on the file system
 **press.inMemoryStorage=false**
 
 
+h3. __press.p3pHeader__
+
+The P3P header to output. eg
+**press.p3pHeader=CP="IDC DSP CURa ADMa DEVa TAIa OUR BUS IND UNI COM NAV INT"**
+
+If missing or empty, no P3P header is output.
+
+By default the P3P header is not output.
+**press.p3pHeader=**
+
+
 h3. __press.key.lifetime__
 
 The amount of time to keep the compression key, in play Time duration format (see play.libs.Time.parseDuration)

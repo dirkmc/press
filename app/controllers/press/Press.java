@@ -75,11 +75,12 @@ public class Press extends Controller {
             // Cache for a year
             response.setHeader("Cache-Control", "max-age=" + 31536000);
             response.setHeader("Expires", httpDateTimeFormatter.print(new DateTime().plusYears(1)));
-            response.setHeader("P3P", "CP=\"IDC DSP CURa ADMa DEVa TAIa OUR BUS IND UNI COM NAV INT\"");
+            if(!PluginConfig.p3pHeader.isEmpty()) {
+                response.setHeader("P3P", PluginConfig.p3pHeader);
+            }
         }
 
         renderBinary(inputStream, compressedFile.name());
-
     }
 
     public static void clearJSCache() {

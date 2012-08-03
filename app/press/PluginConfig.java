@@ -39,6 +39,9 @@ public class PluginConfig {
         // The domain which is storing the content.  Can be set for use with a CDN.
         // Will be used to turn a relative URI into an absolute URL.
         public static final String contentHostingDomain = "";
+        
+        // The P3P header to be output. If empty, the header is not output.
+        public static final String p3pHeader = "";
 
         public static class js {
             // The directory where source javascript files are read from
@@ -75,6 +78,7 @@ public class PluginConfig {
     public static int maxCompressionTimeMillis;
     public static boolean htmlCompatible;
     public static String contentHostingDomain;
+    public static String p3pHeader;
 
     public static class js {
         public static String srcDir = DefaultConfig.js.srcDir;
@@ -121,6 +125,7 @@ public class PluginConfig {
                 DefaultConfig.htmlCompatible);
         contentHostingDomain = ConfigHelper.getString("press.contentHostingDomain",
         		DefaultConfig.contentHostingDomain);
+        p3pHeader = ConfigHelper.getString("press.p3pHeader", DefaultConfig.p3pHeader);
 
         css.srcDir = ConfigHelper.getString("press.css.sourceDir", DefaultConfig.css.srcDir);
         css.compressedDir = ConfigHelper.getString("press.css.outputDir",
@@ -157,6 +162,8 @@ public class PluginConfig {
         PressLogger.trace("in memory storage: %s", inMemoryStorage);
         PressLogger.trace("compression key storage time: %s", compressionKeyStorageTime);
         PressLogger.trace("HTML compatible: %b", htmlCompatible);
+        PressLogger.trace("Content hosting domain: %s", contentHostingDomain);
+        PressLogger.trace("P3P header: %s", p3pHeader);
         PressLogger.trace("css source directory: %s", css.srcDir);
         PressLogger.trace("css compressed output directory: %s", css.compressedDir);
         PressLogger.trace("js source directory: %s", js.srcDir);
