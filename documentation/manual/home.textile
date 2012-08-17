@@ -197,6 +197,12 @@ By default the P3P header is not output.
 **press.p3pHeader=**
 
 
+h3. __press.outputRawLess__
+
+By default, when __press__ is disabled, Less files will still be compiled to CSS. If this option is set to true, Less files will not be compiled, they will be output as raw Less.
+**press.outputRawLess=false**
+
+
 h3. __press.key.lifetime__
 
 The amount of time to keep the compression key, in play Time duration format (see play.libs.Time.parseDuration)
@@ -300,6 +306,7 @@ The following people have contributed to the development of this plugin:
 * Oren Ellenbogen
 * João Augusto Venancio da Silva
 * javialeon
+* Shane Berry
 
 Thanks!
 

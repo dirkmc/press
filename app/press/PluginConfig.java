@@ -35,13 +35,18 @@ public class PluginConfig {
         // HTML standard. For example HTML requires that a closing LINK tag MUST
         // NOT be output, while XHTML requires that it MUST be output
         public static final boolean htmlCompatible = false;
-       
-        // The domain which is storing the content.  Can be set for use with a CDN.
-        // Will be used to turn a relative URI into an absolute URL.
+
+        // The domain which is storing the content. Can be set for use with a
+        // CDN. Will be used to turn a relative URI into an absolute URL.
         public static final String contentHostingDomain = "";
-        
+
         // The P3P header to be output. If empty, the header is not output.
         public static final String p3pHeader = "";
+
+        // By default, when Press is disabled Less files will still be compiled
+        // to CSS. If this option is set to true, Less files will be not be
+        // compiled, they will be output raw.
+        public static final boolean outputRawLess = false;
 
         public static class js {
             // The directory where source javascript files are read from
@@ -79,6 +84,7 @@ public class PluginConfig {
     public static boolean htmlCompatible;
     public static String contentHostingDomain;
     public static String p3pHeader;
+    public static boolean outputRawLess;
 
     public static class js {
         public static String srcDir = DefaultConfig.js.srcDir;
@@ -116,7 +122,8 @@ public class PluginConfig {
         cache = CachingStrategy.parse(ConfigHelper.getString("press.cache", cacheDefault));
         cacheClearEnabled = ConfigHelper.getBoolean("press.cache.clearEnabled",
                 DefaultConfig.cacheClearEnabled);
-        inMemoryStorage = ConfigHelper.getBoolean("press.inMemoryStorage", DefaultConfig.inMemoryStorage);
+        inMemoryStorage = ConfigHelper.getBoolean("press.inMemoryStorage",
+                DefaultConfig.inMemoryStorage);
         compressionKeyStorageTime = ConfigHelper.getString("press.key.lifetime",
                 DefaultConfig.compressionKeyStorageTime);
         maxCompressionTimeMillis = ConfigHelper.getInt("press.compression.maxTimeMillis",
@@ -124,8 +131,9 @@ public class PluginConfig {
         htmlCompatible = ConfigHelper.getBoolean("press.htmlCompatible",
                 DefaultConfig.htmlCompatible);
         contentHostingDomain = ConfigHelper.getString("press.contentHostingDomain",
-        		DefaultConfig.contentHostingDomain);
+                DefaultConfig.contentHostingDomain);
         p3pHeader = ConfigHelper.getString("press.p3pHeader", DefaultConfig.p3pHeader);
+        outputRawLess = ConfigHelper.getBoolean("press.outputRawLess", DefaultConfig.outputRawLess);
 
         css.srcDir = ConfigHelper.getString("press.css.sourceDir", DefaultConfig.css.srcDir);
         css.compressedDir = ConfigHelper.getString("press.css.outputDir",

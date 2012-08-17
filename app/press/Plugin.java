@@ -3,9 +3,13 @@ package press;
 import java.lang.reflect.Method;
 
 import play.PlayPlugin;
+import play.mvc.Http.Request;
+import play.mvc.Http.Response;
+import play.vfs.VirtualFile;
 
 public class Plugin extends PlayPlugin {
     static ThreadLocal<RequestManager> rqManager = new ThreadLocal<RequestManager>();
+    static StaticAssetManager assetManager;
 
     @Override
     public void onApplicationStart() {
@@ -14,12 +18,20 @@ public class Plugin extends PlayPlugin {
 
         // Clear the asset cache
         RequestManager.clearCache();
+        
+        // Recreate the asset manager
+        assetManager = new StaticAssetManager();
     }
 
     @Override
     public void beforeActionInvocation(Method actionMethod) {
         // Before each action, reinitialize variables
         rqManager.set(new RequestManager());
+    }
+
+    @Override
+    public boolean serveStatic(VirtualFile file, Request request, Response response) {
+        return assetManager.serveStatic(file, request, response);
     }
 
     /**
