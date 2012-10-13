@@ -59,7 +59,7 @@ public class PressFileWriter {
             // Note that this flushes and closes the writer as well
             file.close();
         }
-        
+
         return file;
     }
 
@@ -78,13 +78,13 @@ public class PressFileWriter {
     }
 
     public static boolean hasPressHeader(File file) {
-    	BufferedReader reader = null;
         try {
             if (!file.exists()) {
                 return false;
             }
-            reader = new BufferedReader(new FileReader(file));
+            BufferedReader reader = new BufferedReader(new FileReader(file));
             String firstLine = reader.readLine();
+            reader.close();
             Matcher matcher = HEADER_PATTERN.matcher(firstLine);
             if (matcher.matches()) {
                 return true;
@@ -92,14 +92,6 @@ public class PressFileWriter {
             return false;
         } catch (IOException e) {
             return false;
-        } finally {
-        	if (reader != null) {
-        		try {
-        			reader.close();
-        		} catch (Exception r) {
-        			Logger.warn(r, "Error closing reader");
-				}
-        	}
         }
     }
 }

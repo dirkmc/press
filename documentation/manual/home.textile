@@ -307,6 +307,7 @@ The following people have contributed to the development of this plugin:
 * João Augusto Venancio da Silva
 * javialeon
 * Shane Berry
+* Johan Vosloo
 
 Thanks!
 
@@ -314,6 +315,5 @@ Thanks!
 
 h2. <a>Questions</a>
 
-If anything in the documentation is not clear, if you find a bug, or if you have questions, please use the play google group and include the word "press" in the subject line:
-"http://groups.google.com/group/play-framework":http://groups.google.com/group/play-framework
-
+If anything in the documentation is not clear, if you find a bug, or if you have questions, please open an issue on the github project for this plugin:
+"https://github.com/dirkmc/press/issues":https://github.com/dirkmc/press/issues
