@@ -19,13 +19,13 @@ public class RequestManager {
 
     public String addSingleFile(boolean rqType, String fileName) {
         RequestHandler handler = getRequestHandler(rqType);
-        VirtualFile file = handler.checkFileExists(fileName);
+        handler.checkFileExists(fileName);
 
         String src = null;
         if (performCompression()) {
             src = handler.getCompressedUrl(handler.getSingleFileCompressionKey(fileName));
         } else {
-            src = Router.reverse(file);
+            src = handler.getSrcDir() + fileName;
         }
 
         return handler.getTag(src);
@@ -36,13 +36,13 @@ public class RequestManager {
         String baseUrl = handler.getSrcDir();
         String result = "";
         for (String fileName : PressFileGlobber.getResolvedFiles(src, baseUrl)) {
-            VirtualFile file = handler.checkFileExists(fileName);
+            handler.checkFileExists(fileName);
             handler.checkForDuplicates(fileName);
 
             if (performCompression()) {
                 result += handler.add(fileName, packFile) + "\n";
             } else {
-                result += handler.getTag(Router.reverse(file));
+                result += handler.getTag(baseUrl + fileName);
             }
         }
 
