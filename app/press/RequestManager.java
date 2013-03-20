@@ -1,5 +1,7 @@
 package press;
 
+import play.mvc.Router;
+import play.vfs.VirtualFile;
 import press.io.PressFileGlobber;
 
 /**
@@ -19,13 +21,13 @@ public class RequestManager {
 
     public String addSingleFile(boolean rqType, String fileName) {
         RequestHandler handler = getRequestHandler(rqType);
-        handler.checkFileExists(fileName);
+        VirtualFile file = handler.checkFileExists(fileName);
 
         String src = null;
         if (performCompression()) {
             src = handler.getCompressedUrl(handler.getSingleFileCompressionKey(fileName));
         } else {
-            src = handler.getSrcDir() + fileName;
+            src = Router.reverse(file);
         }
 
         return handler.getTag(src);
@@ -36,13 +38,13 @@ public class RequestManager {
         String baseUrl = handler.getSrcDir();
         String result = "";
         for (String fileName : PressFileGlobber.getResolvedFiles(src, baseUrl)) {
-            handler.checkFileExists(fileName);
+            VirtualFile file = handler.checkFileExists(fileName);
             handler.checkForDuplicates(fileName);
 
             if (performCompression()) {
                 result += handler.add(fileName, packFile) + "\n";
             } else {
-                result += handler.getTag(baseUrl + fileName);
+                result += handler.getTag(Router.reverse(file));
             }
         }
 
