@@ -308,6 +308,7 @@ The following people have contributed to the development of this plugin:
 * javialeon
 * Shane Berry
 * Johan Vosloo
+* caioaoque
 
 Thanks!
 
