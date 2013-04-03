@@ -103,6 +103,12 @@ public class OnDiskCompressedFile extends CompressedFile {
         String tmpPath = tmpOutputFile.getAbsolutePath();
         String finalPath = file.getRealFile().getAbsolutePath();
         PressLogger.trace(msg, tmpPath, finalPath);
+
+        //If destination file already exists, delete it to fix bug on overwrite
+        File currentFile = new File(finalPath);
+        if(currentFile.exists()) {
+            currentFile.delete();
+        }
         if (!tmpOutputFile.renameTo(file.getRealFile())) {
             String ex = "Successfully wrote compressed file to temporary path\n" + tmpPath;
             ex += "\nBut could not move it to final path\n" + finalPath;
