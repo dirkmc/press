@@ -310,6 +310,7 @@ The following people have contributed to the development of this plugin:
 * Johan Vosloo
 * caioaoque
 * Quentin Morisseau
+* tomparle
 
 Thanks!
 
