@@ -23,7 +23,7 @@ public class InMemoryCompressedFile extends CompressedFile {
     private Writer writer;
     private ByteArrayOutputStream outputStream;
     private byte[] bytes;
-    private static final String A_VERY_LONG_TIME = "3650d";
+    private static final String A_VERY_LONG_TIME = "30d";
 
     public InMemoryCompressedFile(String fileKey) {
         super(fileKey);
